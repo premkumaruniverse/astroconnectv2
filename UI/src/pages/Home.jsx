@@ -148,11 +148,8 @@ const Home = () => {
       <main className="container mx-auto px-4 py-6 space-y-8 pb-20">
         
         {/* Hero Section: Panchang, Kundli, Horoscope */}
-        <div className="flex flex-col gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           
-          {/* Top Row: Panchang & Kundli (Compact) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            
             {/* Daily Panchang - Compact Horizontal Layout */}
             <div 
               onClick={() => setActiveModal('panchang')}
@@ -200,10 +197,9 @@ const Home = () => {
                 <div className="absolute top-0 right-0 w-16 h-16 bg-white opacity-5 rounded-full -mr-8 -mt-8"></div>
                 <div className="absolute bottom-0 left-0 w-12 h-12 bg-white opacity-5 rounded-full -ml-6 -mb-6"></div>
             </div>
-          </div>
 
-          {/* Bottom Row: Horoscope (Compact Horizontal Scroll) */}
-          <div className="bg-white dark:bg-slate-800 rounded-xl p-3 shadow-md border border-gray-100 dark:border-gray-700 flex items-center gap-4 overflow-hidden h-20">
+          {/* Horoscope (Compact Horizontal Scroll) */}
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-3 shadow-md border border-gray-100 dark:border-gray-700 flex items-center gap-4 overflow-hidden h-24">
              <div className="flex items-center gap-2 min-w-max pl-2 border-r border-gray-100 dark:border-gray-700 pr-4">
                 <SunIcon className="h-6 w-6 text-yellow-500" />
                 <h3 className="text-sm font-bold text-gray-900 dark:text-white leading-tight">
