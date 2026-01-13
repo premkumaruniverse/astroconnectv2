@@ -59,6 +59,16 @@ export const chat = {
   sendMessage: (data) => api.post('/api/chat/', data),
 };
 
+export const features = {
+  getDailyPanchang: () => api.get('/api/features/panchang/daily'),
+  getDailyHoroscope: () => api.get('/api/features/horoscope/daily'),
+  getShopItems: () => api.get('/api/features/shop/items'),
+  getNews: () => api.get('/api/features/news'),
+  getAvailableReports: () => api.get('/api/features/reports/available'),
+  getInsight: (category) => api.get(`/api/features/insights/${category}`),
+  checkMatching: (boyData, girlData) => api.post('/api/features/matching/check', { boy_details: boyData, girl_details: girlData }),
+};
+
 export const sessions = {
   start: (astrologerId) => api.post('/api/sessions/start', { astrologer_id: astrologerId }),
   getById: (sessionId) => api.get(`/api/sessions/${sessionId}`),
