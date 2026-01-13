@@ -1,0 +1,36 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app.routers import auth, astrologers, admin, wallet, chat, sessions, connect, users
+from app.core.config import PROJECT_NAME
+from app.core.database import engine, Base
+from app import models # Import models to register them with Base
+
+# Create database tables
+Base.metadata.create_all(bind=engine)
+
+app = FastAPI(title=PROJECT_NAME)
+
+# CORS Configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(auth.router, prefix="/auth", tags=["auth"])
+app.include_router(astrologers.router, prefix="/api/astrologers", tags=["astrologers"])
+app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
+app.include_router(wallet.router, prefix="/api/wallet", tags=["wallet"])
+app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
+app.include_router(sessions.router, prefix="/api/sessions", tags=["sessions"])
+app.include_router(connect.router, tags=["connect"]) # No prefix as it's defined in the router decorator
+
+@app.get("/")
+async def root():
+    return {"message": "AstroVeda Connect API is running"}
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "database": "postgresql"}

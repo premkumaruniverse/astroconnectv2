@@ -1,0 +1,11 @@
+# Global IDE and OS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Environment variables
+.env
+
+# Logs
+*.log
