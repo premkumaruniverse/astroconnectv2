@@ -67,6 +67,7 @@ export const features = {
   getAvailableReports: () => api.get('/api/features/reports/available'),
   getInsight: (category) => api.get(`/api/features/insights/${category}`),
   checkMatching: (boyData, girlData) => api.post('/api/features/matching/check', { boy_details: boyData, girl_details: girlData }),
+  generateKundli: (data) => api.post('/api/features/kundli/generate', data),
 };
 
 export const sessions = {

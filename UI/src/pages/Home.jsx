@@ -33,6 +33,21 @@ const FeatureCard = ({ icon: Icon, title, color, onClick }) => (
   </div>
 );
 
+const RASHI_ICONS = {
+  "Aries": "♈",
+  "Taurus": "♉",
+  "Gemini": "♊",
+  "Cancer": "♋",
+  "Leo": "♌",
+  "Virgo": "♍",
+  "Libra": "♎",
+  "Scorpio": "♏",
+  "Sagittarius": "♐",
+  "Capricorn": "♑",
+  "Aquarius": "♒",
+  "Pisces": "♓"
+};
+
 const SectionHeader = ({ title, actionText, onAction }) => (
   <div className="flex justify-between items-center mb-4 px-2">
     <h2 className="text-xl font-bold text-gray-900 dark:text-white">{title}</h2>
@@ -100,12 +115,12 @@ const Home = () => {
   };
 
   const menuItems = [
-    { title: 'Daily Panchang', icon: CalendarIcon, color: 'bg-orange-500', action: () => {} },
-    { title: 'Brihat Kundli', icon: DocumentTextIcon, color: 'bg-purple-500', action: () => {} },
+    { title: 'Daily Panchang', icon: CalendarIcon, color: 'bg-orange-500', action: () => navigate('/panchang') },
+    { title: 'Brihat Kundli', icon: DocumentTextIcon, color: 'bg-purple-500', action: () => navigate('/kundli') },
     { title: 'Astro Shop', icon: ShoppingBagIcon, color: 'bg-pink-500', action: () => {} },
     { title: 'News', icon: NewspaperIcon, color: 'bg-blue-500', action: () => {} },
     { title: 'Matching', icon: HeartIcon, color: 'bg-red-500', action: () => {} },
-    { title: 'Horoscope', icon: SunIcon, color: 'bg-yellow-500', action: () => {} },
+    { title: 'Horoscope', icon: SunIcon, color: 'bg-yellow-500', action: () => navigate('/horoscope') },
     { title: 'Career', icon: BriefcaseIcon, color: 'bg-green-500', action: () => {} },
     { title: 'Mental Health', icon: SparklesIcon, color: 'bg-teal-500', action: () => {} },
     { title: 'Today', icon: StarIcon, color: 'bg-indigo-500', action: () => {} },
@@ -122,46 +137,76 @@ const Home = () => {
       <Navbar />
       
       <main className="container mx-auto px-4 py-6 space-y-8 pb-20">
-        
-        {/* Hero Section: Panchang & Insight */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Panchang Card */}
-          <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
-            <div className="relative z-10">
-              <h2 className="text-2xl font-bold mb-1">Daily Panchang</h2>
-              <p className="text-amber-100 text-sm mb-4">{panchang?.date || "Loading..."}</p>
-              
-              <div className="space-y-2 text-sm font-medium">
-                <div className="flex items-center gap-2">
-                  <MoonIcon className="h-4 w-4 text-amber-200" />
-                  <span>{panchang?.tithi || "Loading..."}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <StarIcon className="h-4 w-4 text-amber-200" />
-                  <span>{panchang?.nakshatra}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <SunIcon className="h-4 w-4 text-amber-200" />
-                  <span>{panchang?.yog}</span>
+        {/* Quick Row: Panchang, Kundli, Horoscope */}
+        <div className="px-1">
+          <div className="grid grid-cols-3 gap-2 items-stretch">
+            {/* Panchang Card */}
+            <div 
+              onClick={() => navigate('/panchang')}
+              className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg p-2 md:p-3 lg:p-4 text-white shadow-sm cursor-pointer hover:shadow-md transition-shadow h-24 md:h-32 lg:h-36 flex flex-col justify-between"
+            >
+              <div className="flex items-center gap-2">
+                <CalendarIcon className="h-4 w-4 md:h-5 md:w-5 text-white/90" />
+                <h2 className="text-sm md:text-base font-bold">Daily Panchang</h2>
+              </div>
+              <div className="mt-1">
+                <p className="text-amber-100 text-[11px] md:text-xs md:mb-2">{panchang?.date || "Loading..."}</p>
+                <div className="hidden md:grid grid-cols-3 gap-2 text-[12px] font-medium">
+                  <div className="flex items-center gap-1">
+                    <MoonIcon className="h-4 w-4 text-amber-200" />
+                    <span className="truncate">{panchang?.tithi || "..."}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <StarIcon className="h-4 w-4 text-amber-200" />
+                    <span className="truncate">{panchang?.nakshatra || "..."}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <SunIcon className="h-4 w-4 text-amber-200" />
+                    <span className="truncate">{panchang?.yog || "..."}</span>
+                  </div>
                 </div>
               </div>
             </div>
-            <SparklesIcon className="absolute -bottom-4 -right-4 h-32 w-32 text-white opacity-10" />
-          </div>
 
-          {/* Today's Insight */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700 flex flex-col justify-center">
-             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-                <SparklesIcon className="h-5 w-5 text-purple-500" />
-                Cosmic Insight
-             </h3>
-             <p className="text-gray-600 dark:text-gray-300 italic">
-               "{insight?.insight || "Align your energy with the universe today."}"
-             </p>
-             <div className="mt-4 flex gap-2">
-                <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 text-xs rounded-md">#Mindfulness</span>
-                <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 text-xs rounded-md">#Growth</span>
-             </div>
+            {/* Kundli Card */}
+            <div 
+              onClick={() => navigate('/kundli')}
+              className="bg-white dark:bg-slate-800 rounded-lg p-2 md:p-3 lg:p-4 shadow-sm border border-gray-100 dark:border-gray-700 cursor-pointer hover:shadow-md transition-shadow h-24 md:h-32 lg:h-36 flex flex-col justify-between"
+            >
+              <div className="flex items-center gap-2">
+                <DocumentTextIcon className="h-4 w-4 md:h-5 md:w-5 text-purple-600 dark:text-purple-400" />
+                <h2 className="text-sm md:text-base font-bold text-gray-900 dark:text-white">Kundli</h2>
+              </div>
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] md:text-xs text-gray-600 dark:text-gray-300">Quick generate</p>
+              </div>
+            </div>
+
+            {/* Horoscope Card */}
+            <div 
+              onClick={() => navigate('/horoscope')}
+              className="bg-white dark:bg-slate-800 rounded-lg p-2 md:p-3 lg:p-4 shadow-sm border border-gray-100 dark:border-gray-700 cursor-pointer hover:shadow-md transition-shadow h-24 md:h-32 lg:h-36 flex flex-col"
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <SunIcon className="h-4 w-4 md:h-5 md:w-5 text-yellow-500" />
+                <h2 className="text-sm md:text-base font-bold text-gray-900 dark:text-white">Horoscope</h2>
+              </div>
+              <div className="md:hidden flex items-center gap-1 text-[11px] text-gray-600 dark:text-gray-300">
+                <span>12 Rashi</span><span>•</span><span>Daily</span>
+              </div>
+              <div className="hidden md:flex overflow-x-auto gap-2 scrollbar-hide mt-1">
+                {Object.entries(RASHI_ICONS).map(([sign, icon]) => (
+                  <button
+                    key={sign}
+                    onClick={() => navigate('/horoscope')}
+                    className="min-w-[110px] flex items-center gap-2 px-2 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-amber-50 dark:hover:bg-slate-600 transition-colors"
+                  >
+                    <span className="text-3xl md:text-4xl leading-none animate-spin-slow">{icon}</span>
+                    <span className="text-[12px] md:text-sm font-medium text-gray-800 dark:text-gray-200">{sign}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 

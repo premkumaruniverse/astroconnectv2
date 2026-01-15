@@ -9,6 +9,9 @@ import AdminPanel from './pages/AdminPanel';
 import ConsultationRoom from './pages/ConsultationRoom';
 import ApplyAstrologer from './pages/ApplyAstrologer';
 import Wallet from './pages/Wallet';
+import PanchangPage from './pages/PanchangPage';
+import HoroscopePage from './pages/HoroscopePage';
+import KundliPage from './pages/KundliPage';
 
 import VerificationPendingRoute from './components/VerificationPendingRoute';
 
@@ -67,6 +70,10 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         
+        <Route path="/panchang" element={<PanchangPage />} />
+        <Route path="/horoscope" element={<HoroscopePage />} />
+        <Route path="/kundli" element={<KundliPage />} />
+
         <Route 
           path="/verification-pending" 
           element={<VerificationPendingRoute />} 
