@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
+import { LanguageProvider } from './context/LanguageContext';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -63,7 +64,8 @@ const RootRedirect = () => {
 function App() {
   return (
     <ThemeProvider>
-      <Router>
+      <LanguageProvider>
+        <Router>
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<Home />} />
@@ -145,6 +147,7 @@ function App() {
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </Router>
+      </LanguageProvider>
     </ThemeProvider>
   );
 }

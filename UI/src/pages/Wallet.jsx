@@ -1,31 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { CreditCardIcon, BanknotesIcon, ClockIcon, CurrencyRupeeIcon, CheckCircleIcon, XCircleIcon, ArrowTrendingUpIcon, ArrowTrendingDownIcon, ChatBubbleLeftRightIcon } from '@heroicons/react/24/solid';
 import StatusCard from '../components/StatusCard';
 import { wallet } from '../services/api';
+import { LanguageContext } from '../context/LanguageContext';
 
 const Wallet = () => {
+  const { t } = useContext(LanguageContext);
   const [balance, setBalance] = useState(0);
   const [transactions, setTransactions] = useState([]);
   const [showAddMoney, setShowAddMoney] = useState(false);
   const [amount, setAmount] = useState('');
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchWalletData();
-  }, []);
-
   const fetchWalletData = async () => {
     try {
-      setLoading(true);
       const response = await wallet.getBalance();
       setBalance(response.data.balance);
       setTransactions(response.data.transactions || []);
     } catch (err) {
       console.error("Failed to fetch wallet data", err);
-    } finally {
-      setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchWalletData();
+  }, []);
 
   const handleAddMoney = async () => {
     if (amount && parseFloat(amount) > 0) {
@@ -54,7 +51,7 @@ const Wallet = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-6 md:mb-8">
           <h1 className="text-2xl md:text-3xl font-bold mb-2">
-            My Wallet
+            {t('wallet_title')}
           </h1>
           <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">
             Manage your wallet balance and transaction history
