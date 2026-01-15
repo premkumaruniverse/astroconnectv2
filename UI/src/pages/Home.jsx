@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   StarIcon, 
@@ -6,7 +6,6 @@ import {
   HeartIcon, 
   ShoppingBagIcon,
   NewspaperIcon,
-  FireIcon,
   AcademicCapIcon,
   BriefcaseIcon,
   UserGroupIcon,
@@ -19,6 +18,7 @@ import {
   BoltIcon
 } from '@heroicons/react/24/solid';
 import Navbar from '../components/Navbar';
+import { LanguageContext } from '../context/LanguageContext';
 import { astrologer, features } from '../services/api';
 
 const FeatureCard = ({ icon: Icon, title, color, onClick }) => (
@@ -68,12 +68,7 @@ const Home = () => {
   const [news, setNews] = useState([]);
   const [shopItems, setShopItems] = useState([]);
   const [astrologersList, setAstrologersList] = useState([]);
-  const [insight, setInsight] = useState(null);
-  const [horoscope, setHoroscope] = useState([]);
-
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
+  const { t } = useContext(LanguageContext);
 
   const fetchDashboardData = async () => {
     try {
@@ -82,16 +77,12 @@ const Home = () => {
         panchangRes, 
         newsRes, 
         shopRes, 
-        astroRes, 
-        insightRes,
-        horoscopeRes
+        astroRes
       ] = await Promise.all([
         features.getDailyPanchang(),
         features.getNews(),
         features.getShopItems(),
-        astrologer.getAll(),
-        features.getInsight('today'),
-        features.getDailyHoroscope()
+        astrologer.getAll()
       ]);
 
       setPanchang(panchangRes.data);
@@ -106,28 +97,45 @@ const Home = () => {
         return 0;
       });
       setAstrologersList(sortedAstrologers);
-      setInsight(insightRes.data);
-      setHoroscope(horoscopeRes.data);
-
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
     }
   };
 
+  useEffect(() => {
+    const timeout = setTimeout(fetchDashboardData, 0);
+    return () => clearTimeout(timeout);
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const astroRes = await astrologer.getAll();
+        const sortedAstrologers = astroRes.data.sort((a, b) => {
+          if (a.is_live && !b.is_live) return -1;
+          if (!a.is_live && b.is_live) return 1;
+          if (a.is_online && !b.is_online) return -1;
+          if (!a.is_online && b.is_online) return 1;
+          return 0;
+        });
+        setAstrologersList(sortedAstrologers);
+      } catch (error) {
+        console.error("Error updating astrologers list:", error);
+      }
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   const menuItems = [
     { title: 'Daily Panchang', icon: CalendarIcon, color: 'bg-orange-500', action: () => navigate('/panchang') },
     { title: 'Brihat Kundli', icon: DocumentTextIcon, color: 'bg-purple-500', action: () => navigate('/kundli') },
-    { title: 'Astro Shop', icon: ShoppingBagIcon, color: 'bg-pink-500', action: () => {} },
-    { title: 'News', icon: NewspaperIcon, color: 'bg-blue-500', action: () => {} },
     { title: 'Matching', icon: HeartIcon, color: 'bg-red-500', action: () => {} },
-    { title: 'Horoscope', icon: SunIcon, color: 'bg-yellow-500', action: () => navigate('/horoscope') },
     { title: 'Career', icon: BriefcaseIcon, color: 'bg-green-500', action: () => {} },
     { title: 'Mental Health', icon: SparklesIcon, color: 'bg-teal-500', action: () => {} },
     { title: 'Today', icon: StarIcon, color: 'bg-indigo-500', action: () => {} },
     { title: 'Love', icon: HeartIcon, color: 'bg-rose-500', action: () => {} },
     { title: 'Education', icon: AcademicCapIcon, color: 'bg-cyan-500', action: () => {} },
-    { title: 'Live', icon: VideoCameraIcon, color: 'bg-red-600', action: () => document.getElementById('live-astrologers').scrollIntoView({ behavior: 'smooth' }) },
-    { title: 'Call & Chat', icon: ChatBubbleLeftRightIcon, color: 'bg-emerald-500', action: () => document.getElementById('live-astrologers').scrollIntoView({ behavior: 'smooth' }) }, // Or list view
     { title: 'Reports', icon: DocumentTextIcon, color: 'bg-gray-500', action: () => {} },
     { title: 'Community', icon: UserGroupIcon, color: 'bg-violet-500', action: () => {} },
   ];
@@ -179,6 +187,7 @@ const Home = () => {
               </div>
               <div className="flex items-center justify-between">
                 <p className="text-[11px] md:text-xs text-gray-600 dark:text-gray-300">Quick generate</p>
+                <button className="px-2 md:px-3 py-1 md:py-2 bg-purple-600 text-white rounded-md text-[11px] md:text-sm font-semibold hover:bg-purple-700">Open</button>
               </div>
             </div>
 
@@ -212,7 +221,7 @@ const Home = () => {
 
         {/* Feature Grid */}
         <div>
-          <SectionHeader title="Explore Features" />
+          <SectionHeader title={t('home_explore_features')} />
           <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
             {menuItems.map((item, index) => (
               <FeatureCard key={index} {...item} />
@@ -222,7 +231,7 @@ const Home = () => {
 
         {/* Live Astrologers */}
         <div id="live-astrologers">
-          <SectionHeader title="Live Astrologers" actionText="View All" onAction={() => {}} />
+          <SectionHeader title={t('home_live_astrologers')} actionText="View All" onAction={() => {}} />
           <div className="flex overflow-x-auto pb-4 gap-4 scrollbar-hide">
             {astrologersList.length > 0 ? astrologersList.map((astro) => (
               <div key={astro.id} className="min-w-[200px] bg-white dark:bg-slate-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col items-center">
@@ -234,6 +243,21 @@ const Home = () => {
                  </div>
                  <h3 className="font-semibold text-gray-900 dark:text-white truncate w-full text-center">{astro.name}</h3>
                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{astro.specialties?.[0] || "Vedic"}</p>
+                 <div className="flex items-center justify-between w-full mb-2">
+                   <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">
+                     ₹{astro.rate ?? 0}/min
+                   </span>
+                   <span className="text-[11px] flex items-center gap-1">
+                     <span
+                       className={`inline-block w-2 h-2 rounded-full ${
+                         astro.is_online ? 'bg-green-500' : 'bg-gray-400'
+                       }`}
+                     />
+                     <span className="text-gray-600 dark:text-gray-300">
+                       {astro.is_online ? 'Online' : 'Offline'}
+                     </span>
+                   </span>
+                 </div>
                  <button 
                    onClick={() => navigate(`/consultation/${astro.id}`)}
                    className="w-full py-1.5 bg-amber-500 text-white text-xs font-medium rounded-lg hover:bg-amber-600 transition-colors"
@@ -248,8 +272,8 @@ const Home = () => {
         </div>
 
         {/* Astro Shop Preview */}
-        <div>
-          <SectionHeader title="Astro Shop" actionText="Visit Store" onAction={() => {}} />
+        <div id="astro-shop">
+          <SectionHeader title={t('home_astro_shop')} actionText="Visit Store" onAction={() => {}} />
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {shopItems.map((item) => (
               <div key={item.id} className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-700 group">
@@ -275,7 +299,7 @@ const Home = () => {
 
         {/* News Section */}
         <div>
-          <SectionHeader title="Latest News" actionText="Read More" onAction={() => {}} />
+          <SectionHeader title={t('home_latest_news')} actionText="Read More" onAction={() => {}} />
           <div className="space-y-4">
              {news.map((item) => (
                <div key={item.id} className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex gap-4">
