@@ -37,11 +37,15 @@ async def signup(user: UserSignup, db: Session = Depends(get_db)):
         expires_delta=access_token_expires
     )
     
+    verification_status = None
+
     return {
         "access_token": access_token, 
         "token_type": "bearer",
         "role": new_user.role,
-        "name": new_user.name
+        "name": new_user.name,
+        "id": new_user.id,
+        "verification_status": verification_status,
     }
 
 @router.post("/login", response_model=Token)
