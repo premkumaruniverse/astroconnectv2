@@ -1,17 +1,14 @@
 from fastapi import APIRouter, Depends
 from typing import List, Dict, Any
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
+from app.core.database import get_db
+from app.models import News
+from app.schemas.news import NewsOut
 
 router = APIRouter()
 
 # --- Mock Data Models ---
-
-class NewsItem(BaseModel):
-    id: int
-    title: str
-    summary: str
-    image_url: str
-    date: str
 
 class ShopItem(BaseModel):
     id: int
@@ -60,13 +57,9 @@ def get_shop_items():
         {"id": 4, "name": "Crystal Ball", "price": 2500.00, "image_url": "https://via.placeholder.com/150", "category": "Crystals"},
     ]
 
-@router.get("/news", response_model=List[NewsItem])
-def get_news():
-    return [
-        {"id": 1, "title": "Jupiter Transit 2024", "summary": "How Jupiter's movement will affect your sign.", "image_url": "https://via.placeholder.com/300x200", "date": "2024-05-20"},
-        {"id": 2, "title": "Solar Eclipse Effects", "summary": "What to do and what to avoid during the eclipse.", "image_url": "https://via.placeholder.com/300x200", "date": "2024-06-10"},
-        {"id": 3, "title": "Vastu Tips for Home", "summary": "Simple changes to bring positivity.", "image_url": "https://via.placeholder.com/300x200", "date": "2024-06-15"},
-    ]
+@router.get("/news", response_model=List[NewsOut])
+def get_news(db: Session = Depends(get_db)):
+    return db.query(News).order_by(News.created_at.desc()).limit(20).all()
 
 @router.get("/reports/available")
 def get_available_reports():

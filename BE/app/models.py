@@ -82,3 +82,14 @@ class Transaction(Base):
 
     # Relationships
     user = relationship("User", back_populates="transactions")
+
+
+class News(Base):
+    __tablename__ = "news"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    summary = Column(Text, nullable=False)
+    content = Column(Text, nullable=False)
+    image_url = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)

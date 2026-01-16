@@ -1,10 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from typing import List
 from sqlalchemy.orm import Session
 from app.schemas.astrologer import AstrologerProfile
+from app.schemas.news import NewsOut
 from app.dependencies import get_current_user
 from app.core.database import get_db
-from app.models import Astrologer, User, Session as SessionModel
+from app.models import Astrologer, User, Session as SessionModel, News
+import cloudinary
+import cloudinary.uploader
 
 router = APIRouter()
 
@@ -50,3 +53,49 @@ async def get_stats(current_user: User = Depends(get_current_user), db: Session 
         "total_sessions": total_sessions,
         "verification_requests": verification_requests,
     }
+
+
+@router.post("/news", response_model=NewsOut)
+async def create_news(
+    title: str = Form(...),
+    summary: str = Form(...),
+    content: str = Form(...),
+    image: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    check_admin(current_user)
+    try:
+        file_bytes = await image.read()
+        if not file_bytes:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No image data received",
+            )
+        upload_result = cloudinary.uploader.upload(file_bytes, folder="latest_news")
+        image_url = upload_result.get("secure_url")
+    except Exception as e:
+        print(f"Cloudinary upload error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Image upload failed: {e}",
+        )
+    news_item = News(
+        title=title,
+        summary=summary,
+        content=content,
+        image_url=image_url,
+    )
+    db.add(news_item)
+    db.commit()
+    db.refresh(news_item)
+    return news_item
+
+
+@router.get("/news", response_model=List[NewsOut])
+async def list_news(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    check_admin(current_user)
+    return db.query(News).order_by(News.created_at.desc()).all()
