@@ -47,6 +47,7 @@ export const users = {
 
 export const admin = {
   getApplications: () => api.get('/api/admin/applications'),
+  getStats: () => api.get('/api/admin/stats'),
   verifyAstrologer: (email, status) => api.put(`/api/admin/verify/${email}?status=${status}`),
 };
 
