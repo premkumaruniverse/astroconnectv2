@@ -1,9 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket
+from starlette.websockets import WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import auth, astrologers, admin, wallet, chat, sessions, connect, users, features
 from app.core.config import PROJECT_NAME
 from app.core.database import engine, Base
 from app import models # Import models to register them with Base
+from app.notifications import manager
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -36,3 +38,12 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "database": "postgresql"}
+
+@app.websocket("/ws/notifications")
+async def notifications_ws(websocket: WebSocket):
+    await manager.connect(websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        await manager.disconnect(websocket)

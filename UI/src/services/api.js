@@ -53,6 +53,7 @@ export const admin = {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
   getNews: () => api.get('/api/admin/news'),
+  deleteNews: (id) => api.delete(`/api/admin/news/${id}`),
 };
 
 export const wallet = {

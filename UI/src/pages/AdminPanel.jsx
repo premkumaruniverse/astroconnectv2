@@ -470,6 +470,21 @@ const AdminPanel = () => {
                               : ""}
                           </p>
                         </div>
+                        <div className="flex items-center">
+                          <button
+                            onClick={async () => {
+                              try {
+                                await admin.deleteNews(item.id);
+                                await fetchNews();
+                              } catch (e) {
+                                console.error("Failed to delete news", e);
+                              }
+                            }}
+                            className="px-3 py-1.5 bg-red-600 text-white text-xs rounded hover:bg-red-700"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
                     ))
                   )}
