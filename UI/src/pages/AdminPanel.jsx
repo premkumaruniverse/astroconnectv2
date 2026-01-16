@@ -137,9 +137,11 @@ const AdminPanel = () => {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedApp, setSelectedApp] = useState(null);
+  const [stats, setStats] = useState(null);
 
   useEffect(() => {
     fetchApplications();
+    fetchStats();
   }, []);
 
   const fetchApplications = async () => {
@@ -151,6 +153,15 @@ const AdminPanel = () => {
       console.error("Failed to fetch applications", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const response = await admin.getStats();
+      setStats(response.data);
+    } catch (err) {
+      console.error("Failed to fetch admin stats", err);
     }
   };
 
@@ -181,18 +192,45 @@ const AdminPanel = () => {
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <StatCard title="Total Revenue" value="₹12,45,000" change="+12%" icon={CurrencyRupeeIcon} color="bg-green-500" />
-          <StatCard title="Active Users" value="8,245" change="+5%" icon={UsersIcon} color="bg-blue-500" />
-          <StatCard title="Astrologers" value="156" change="+2%" icon={ShieldCheckIcon} color="bg-purple-500" />
-          <StatCard title="Total Sessions" value="24,000" change="+18%" icon={DocumentTextIcon} color="bg-amber-500" />
+          <StatCard
+            title="Active Users"
+            value={stats ? stats.active_users.toLocaleString() : '...'}
+            change="+0%"
+            icon={UsersIcon}
+            color="bg-blue-500"
+          />
+          <StatCard
+            title="Astrologers"
+            value={stats ? stats.astrologers.toLocaleString() : '...'}
+            change="+0%"
+            icon={ShieldCheckIcon}
+            color="bg-purple-500"
+          />
+          <StatCard
+            title="Total Sessions"
+            value={stats ? stats.total_sessions.toLocaleString() : '...'}
+            change="+0%"
+            icon={DocumentTextIcon}
+            color="bg-amber-500"
+          />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Astrologer Verification Queue */}
             <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300">
-                <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white flex items-center">
-                    <ShieldCheckIcon className="h-5 w-5 mr-2 text-amber-500" />
-                    Verification Requests
-                </h2>
+                <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
+                        <ShieldCheckIcon className="h-5 w-5 mr-2 text-amber-500" />
+                        Verification Requests
+                    </h2>
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
+                        {applications.length > 0
+                          ? `${applications.filter(a => a.verification_status === 'pending').length} Pending`
+                          : stats
+                            ? `${stats.verification_requests} Pending`
+                            : '...'}
+                    </span>
+                </div>
                 <div className="space-y-4">
                     {loading ? (
                         <p className="text-gray-600 dark:text-gray-400">Loading applications...</p>
@@ -206,7 +244,18 @@ const AdminPanel = () => {
                                         {app.name.charAt(0)}
                                     </div>
                                     <div>
-                                        <h3 className="font-medium text-gray-900 dark:text-white">{app.name}</h3>
+                                        <div className="flex items-center space-x-2">
+                                            <h3 className="font-medium text-gray-900 dark:text-white">{app.name}</h3>
+                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide ${
+                                                app.verification_status === 'approved'
+                                                  ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
+                                                  : app.verification_status === 'rejected'
+                                                  ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+                                                  : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300'
+                                            }`}>
+                                                {app.verification_status || 'pending'}
+                                            </span>
+                                        </div>
                                         <p className="text-sm text-gray-600 dark:text-gray-400">{app.specialties?.join(', ')}</p>
                                         <p className="text-xs text-gray-500">{app.experience} years • {app.languages?.join(', ')}</p>
                                         <p className="text-xs text-gray-400 mt-1">

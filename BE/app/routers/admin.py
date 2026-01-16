@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.schemas.astrologer import AstrologerProfile
 from app.dependencies import get_current_user
 from app.core.database import get_db
-from app.models import Astrologer, User
+from app.models import Astrologer, User, Session as SessionModel
 
 router = APIRouter()
 
@@ -35,3 +35,18 @@ async def verify_astrologer(email: str, status: str, current_user: User = Depend
     db.commit()
     
     return {"message": f"Astrologer {status}"}
+
+
+@router.get("/stats")
+async def get_stats(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    check_admin(current_user)
+    active_users = db.query(User).filter(User.role == "user").count()
+    astrologers = db.query(Astrologer).filter(Astrologer.status == "approved").count()
+    total_sessions = db.query(SessionModel).count()
+    verification_requests = db.query(Astrologer).filter(Astrologer.status == "pending").count()
+    return {
+        "active_users": active_users,
+        "astrologers": astrologers,
+        "total_sessions": total_sessions,
+        "verification_requests": verification_requests,
+    }
