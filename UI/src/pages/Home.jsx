@@ -68,6 +68,8 @@ const Home = () => {
   const [news, setNews] = useState([]);
   const [shopItems, setShopItems] = useState([]);
   const [astrologersList, setAstrologersList] = useState([]);
+  const [latestNewsId, setLatestNewsId] = useState(null);
+  const [hasNewNews, setHasNewNews] = useState(false);
   const { t } = useContext(LanguageContext);
 
   const fetchDashboardData = async () => {
@@ -87,6 +89,9 @@ const Home = () => {
 
       setPanchang(panchangRes.data);
       setNews(newsRes.data);
+      if (newsRes.data && newsRes.data.length > 0) {
+        setLatestNewsId(newsRes.data[0].id);
+      }
       setShopItems(shopRes.data);
       // Sort astrologers: Live first, then Online, then others
       const sortedAstrologers = astroRes.data.sort((a, b) => {
@@ -106,6 +111,33 @@ const Home = () => {
     const timeout = setTimeout(fetchDashboardData, 0);
     return () => clearTimeout(timeout);
   }, []);
+
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const newsRes = await features.getNews();
+        if (newsRes.data && newsRes.data.length > 0) {
+          const newestId = newsRes.data[0].id;
+          if (latestNewsId && newestId !== latestNewsId) {
+            setHasNewNews(true);
+          }
+          setLatestNewsId(newestId);
+        }
+        setNews(newsRes.data);
+      } catch (error) {
+        console.error("Error updating news:", error);
+      }
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [latestNewsId]);
+
+  const handleViewLatestNews = () => {
+    setHasNewNews(false);
+    const section = document.getElementById('latest-news');
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -145,6 +177,22 @@ const Home = () => {
       <Navbar />
       
       <main className="container mx-auto px-4 py-6 space-y-8 pb-20">
+        {hasNewNews && (
+          <div className="mb-4 px-3">
+            <div className="flex items-center justify-between bg-emerald-500 text-white px-4 py-3 rounded-lg shadow">
+              <div className="flex items-center gap-2">
+                <BoltIcon className="h-5 w-5" />
+                <span className="text-sm font-medium">New news update available</span>
+              </div>
+              <button
+                onClick={handleViewLatestNews}
+                className="text-xs font-semibold underline underline-offset-2"
+              >
+                View
+              </button>
+            </div>
+          </div>
+        )}
         {/* Quick Row: Panchang, Kundli, Horoscope */}
         <div className="px-1">
           <div className="grid grid-cols-3 gap-2 items-stretch">
@@ -298,16 +346,26 @@ const Home = () => {
         </div>
 
         {/* News Section */}
-        <div>
+        <div id="latest-news">
           <SectionHeader title={t('home_latest_news')} actionText="Read More" onAction={() => {}} />
           <div className="space-y-4">
              {news.map((item) => (
                <div key={item.id} className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex gap-4">
-                  <div className="w-24 h-24 bg-gray-200 dark:bg-gray-700 rounded-lg flex-shrink-0"></div>
+                  <div className="w-24 h-24 bg-gray-200 dark:bg-gray-700 rounded-lg flex-shrink-0 overflow-hidden">
+                    {item.image_url ? (
+                      <img
+                        src={item.image_url}
+                        alt={item.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : null}
+                  </div>
                   <div className="flex-1">
                      <h3 className="font-semibold text-gray-900 dark:text-white mb-1 line-clamp-1">{item.title}</h3>
                      <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-2">{item.summary}</p>
-                     <span className="text-xs text-gray-400">{item.date}</span>
+                     <span className="text-xs text-gray-400">
+                       {item.created_at ? new Date(item.created_at).toLocaleDateString() : ''}
+                     </span>
                   </div>
                </div>
              ))}

@@ -49,6 +49,10 @@ export const admin = {
   getApplications: () => api.get('/api/admin/applications'),
   getStats: () => api.get('/api/admin/stats'),
   verifyAstrologer: (email, status) => api.put(`/api/admin/verify/${email}?status=${status}`),
+  createNews: (formData) => api.post('/api/admin/news', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+  getNews: () => api.get('/api/admin/news'),
 };
 
 export const wallet = {

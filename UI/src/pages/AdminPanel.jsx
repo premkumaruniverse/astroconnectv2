@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
-import { UsersIcon, CurrencyRupeeIcon, ShieldCheckIcon, DocumentTextIcon, XMarkIcon, CheckIcon, XCircleIcon } from '@heroicons/react/24/outline';
+import { UsersIcon, CurrencyRupeeIcon, ShieldCheckIcon, DocumentTextIcon, XMarkIcon, CheckIcon, XCircleIcon, PhotoIcon } from '@heroicons/react/24/outline';
+import { NewspaperIcon } from '@heroicons/react/24/solid';
 import { admin } from '../services/api';
 
 const StatCard = ({ title, value, change, icon: Icon, color }) => (
@@ -138,10 +139,19 @@ const AdminPanel = () => {
   const [loading, setLoading] = useState(true);
   const [selectedApp, setSelectedApp] = useState(null);
   const [stats, setStats] = useState(null);
+  const [newsItems, setNewsItems] = useState([]);
+  const [newsForm, setNewsForm] = useState({
+    title: '',
+    summary: '',
+    content: '',
+    image: null,
+  });
+  const [submittingNews, setSubmittingNews] = useState(false);
 
   useEffect(() => {
     fetchApplications();
     fetchStats();
+    fetchNews();
   }, []);
 
   const fetchApplications = async () => {
@@ -165,6 +175,15 @@ const AdminPanel = () => {
     }
   };
 
+  const fetchNews = async () => {
+    try {
+      const response = await admin.getNews();
+      setNewsItems(response.data);
+    } catch (err) {
+      console.error("Failed to fetch news", err);
+    }
+  };
+
   const handleVerification = async (email, status) => {
     try {
       await admin.verifyAstrologer(email, status);
@@ -174,6 +193,52 @@ const AdminPanel = () => {
       }
     } catch (err) {
       console.error("Failed to verify astrologer", err);
+    }
+  };
+
+  const handleNewsInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewsForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleNewsImageChange = (e) => {
+    const file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
+    setNewsForm((prev) => ({
+      ...prev,
+      image: file,
+    }));
+  };
+
+  const handleNewsSubmit = async (e) => {
+    e.preventDefault();
+    if (!newsForm.title || !newsForm.summary || !newsForm.content || !newsForm.image) {
+      return;
+    }
+    try {
+      setSubmittingNews(true);
+      const formData = new FormData();
+      formData.append('title', newsForm.title);
+      formData.append('summary', newsForm.summary);
+      formData.append('content', newsForm.content);
+      formData.append('image', newsForm.image);
+      await admin.createNews(formData);
+      await fetchNews();
+      setNewsForm({
+        title: '',
+        summary: '',
+        content: '',
+        image: null,
+      });
+      if (e.target && e.target.reset) {
+        e.target.reset();
+      }
+    } catch (err) {
+      console.error("Failed to create news", err);
+    } finally {
+      setSubmittingNews(false);
     }
   };
 
@@ -300,6 +365,116 @@ const AdminPanel = () => {
                 <div className="space-y-4">
                      <p className="text-gray-500 text-sm">System logs will appear here.</p>
                 </div>
+            </div>
+            <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300 lg:col-span-2">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
+                  <NewspaperIcon className="h-5 w-5 mr-2 text-red-500" />
+                  Latest News
+                </h2>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <form onSubmit={handleNewsSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Title
+                    </label>
+                    <input
+                      type="text"
+                      name="title"
+                      value={newsForm.title}
+                      onChange={handleNewsInputChange}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                      placeholder="Enter news headline"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Summary
+                    </label>
+                    <textarea
+                      name="summary"
+                      value={newsForm.summary}
+                      onChange={handleNewsInputChange}
+                      rows={2}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                      placeholder="Short summary to show on dashboard"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Content
+                    </label>
+                    <textarea
+                      name="content"
+                      value={newsForm.content}
+                      onChange={handleNewsInputChange}
+                      rows={4}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                      placeholder="Full news content"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Image
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <label className="inline-flex items-center px-3 py-2 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700 text-sm text-gray-700 dark:text-gray-200">
+                        <PhotoIcon className="h-4 w-4 mr-2" />
+                        <span>{newsForm.image ? newsForm.image.name : "Upload image"}</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleNewsImageChange}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={submittingNews}
+                    className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {submittingNews ? "Publishing..." : "Publish News"}
+                  </button>
+                </form>
+                <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">
+                  {newsItems.length === 0 ? (
+                    <p className="text-gray-500 text-sm">No news published yet.</p>
+                  ) : (
+                    newsItems.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-slate-900"
+                      >
+                        <div className="w-20 h-20 rounded-lg bg-gray-200 dark:bg-gray-700 overflow-hidden flex-shrink-0">
+                          {item.image_url ? (
+                            <img
+                              src={item.image_url}
+                              alt={item.title}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : null}
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-1">
+                            {item.title}
+                          </h3>
+                          <p className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2 mb-1">
+                            {item.summary}
+                          </p>
+                          <p className="text-[11px] text-gray-400">
+                            {item.created_at
+                              ? new Date(item.created_at).toLocaleString()
+                              : ""}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
             </div>
         </div>
       </main>
