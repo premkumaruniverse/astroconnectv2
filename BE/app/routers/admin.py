@@ -89,6 +89,11 @@ async def create_news(
     db.add(news_item)
     db.commit()
     db.refresh(news_item)
+    try:
+        from app.notifications import manager
+        await manager.broadcast({"type": "news_added", "payload": {"id": news_item.id, "title": news_item.title}})
+    except Exception as e:
+        print(f"Broadcast error: {e}")
     return news_item
 
 
@@ -99,3 +104,22 @@ async def list_news(
 ):
     check_admin(current_user)
     return db.query(News).order_by(News.created_at.desc()).all()
+
+@router.delete("/news/{news_id}")
+async def delete_news(
+    news_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    check_admin(current_user)
+    news_item = db.query(News).filter(News.id == news_id).first()
+    if not news_item:
+        raise HTTPException(status_code=404, detail="News not found")
+    db.delete(news_item)
+    db.commit()
+    try:
+        from app.notifications import manager
+        await manager.broadcast({"type": "news_deleted", "payload": {"id": news_id}})
+    except Exception as e:
+        print(f"Broadcast error: {e}")
+    return {"success": True}

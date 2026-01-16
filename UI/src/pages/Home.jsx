@@ -140,6 +140,48 @@ const Home = () => {
   };
 
   useEffect(() => {
+    let ws;
+    try {
+      ws = new WebSocket('ws://localhost:8000/ws/notifications');
+      ws.onmessage = async (evt) => {
+        try {
+          const data = JSON.parse(evt.data);
+          if (data?.type === 'news_added') {
+            setHasNewNews(true);
+            try {
+              const res = await features.getNews();
+              setNews(res.data);
+              if (res.data && res.data.length > 0) {
+                setLatestNewsId(res.data[0].id);
+              }
+            } catch (e) {
+            }
+          } else if (data?.type === 'news_deleted') {
+            try {
+              const res = await features.getNews();
+              setNews(res.data);
+              if (res.data && res.data.length > 0) {
+                setLatestNewsId(res.data[0].id);
+              }
+            } catch (e) {
+            }
+          }
+        } catch (e) {
+        }
+      };
+    } catch (e) {
+    }
+    return () => {
+      try {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.close();
+        }
+      } catch (e) {
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     const interval = setInterval(async () => {
       try {
         const astroRes = await astrologer.getAll();
