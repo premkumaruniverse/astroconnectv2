@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { SparklesIcon, SunIcon, MoonIcon } from '@heroicons/react/24/solid';
+import { SparklesIcon, SunIcon, MoonIcon, ShoppingBagIcon } from '@heroicons/react/24/solid';
 import { wallet } from '../services/api';
 import { ThemeContext } from '../context/ThemeContext';
 import { LanguageContext } from '../context/LanguageContext';
@@ -13,12 +13,43 @@ const Navbar = () => {
   const token = localStorage.getItem('token');
   const role = localStorage.getItem('role');
   const [balance, setBalance] = useState(0);
+  const [cartCount, setCartCount] = useState(0);
 
   useEffect(() => {
     if (token && role === 'user') {
       fetchBalance();
     }
   }, [token, role, location.pathname]);
+
+  useEffect(() => {
+    const syncCartCount = () => {
+      try {
+        const saved = localStorage.getItem('astroShopCart');
+        if (!saved) {
+          setCartCount(0);
+          return;
+        }
+        const parsed = JSON.parse(saved);
+        if (!Array.isArray(parsed)) {
+          setCartCount(0);
+          return;
+        }
+        const total = parsed.reduce(
+          (sum, item) => sum + (item.quantity || 0),
+          0
+        );
+        setCartCount(total);
+      } catch (e) {
+        setCartCount(0);
+      }
+    };
+    syncCartCount();
+    const handler = () => syncCartCount();
+    window.addEventListener('astroShopCartUpdated', handler);
+    return () => {
+      window.removeEventListener('astroShopCartUpdated', handler);
+    };
+  }, []);
 
   const fetchBalance = async () => {
     try {
@@ -97,10 +128,23 @@ const Navbar = () => {
             {token ? (
               <>
                 {role === 'user' && (
-                  <Link to="/wallet" className="hidden md:flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-[#0f172a] hover:bg-gray-200 dark:hover:bg-[#0f172a]/80 border border-gray-200 dark:border-amber-500/30 rounded-full transition-all cursor-pointer">
-                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                    <span className="text-gray-700 dark:text-amber-400 text-sm font-medium">₹ {balance.toFixed(2)}</span>
-                  </Link>
+                  <>
+                    <Link
+                      to="/shop"
+                      className="relative flex items-center justify-center mr-1 md:mr-2"
+                    >
+                      <ShoppingBagIcon className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+                      {cartCount > 0 && (
+                        <span className="absolute -top-2 -right-2 flex items-center justify-center h-4 min-w-[1rem] px-1 rounded-full bg-amber-500 text-white text-[10px] font-semibold">
+                          {cartCount > 99 ? '99+' : cartCount}
+                        </span>
+                      )}
+                    </Link>
+                    <Link to="/wallet" className="hidden md:flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-[#0f172a] hover:bg-gray-200 dark:hover:bg-[#0f172a]/80 border border-gray-200 dark:border-amber-500/30 rounded-full transition-all cursor-pointer">
+                      <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                      <span className="text-gray-700 dark:text-amber-400 text-sm font-medium">₹ {balance.toFixed(2)}</span>
+                    </Link>
+                  </>
                 )}
                 <button 
                   onClick={handleLogout}

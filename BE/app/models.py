@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, ARRAY, Text, Boolean
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timedelta
 from app.core.database import Base
 
 class User(Base):
@@ -17,6 +17,7 @@ class User(Base):
     astrologer_profile = relationship("Astrologer", back_populates="user", uselist=False)
     wallet_balance = Column(Float, default=0.0)
     transactions = relationship("Transaction", back_populates="user")
+    product_orders = relationship("ProductOrder", back_populates="user")
     sessions_as_user = relationship("Session", back_populates="user", foreign_keys="Session.user_id")
 
 class Astrologer(Base):
@@ -52,6 +53,8 @@ class Astrologer(Base):
     # Relationships
     user = relationship("User", back_populates="astrologer_profile")
     sessions_as_astrologer = relationship("Session", back_populates="astrologer", foreign_keys="Session.astrologer_id")
+    products = relationship("Product", back_populates="astrologer")
+    product_orders = relationship("ProductOrder", back_populates="astrologer")
 
 class Session(Base):
     __tablename__ = "sessions"
@@ -93,3 +96,41 @@ class News(Base):
     content = Column(Text, nullable=False)
     image_url = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class Product(Base):
+    __tablename__ = "products"
+
+    id = Column(Integer, primary_key=True, index=True)
+    astrologer_id = Column(Integer, ForeignKey("astrologers.id"), nullable=True)
+    name = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    price = Column(Float, nullable=False)
+    image_url = Column(String, nullable=True)
+    category = Column(String, nullable=True)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    astrologer = relationship("Astrologer", back_populates="products")
+    orders = relationship("ProductOrder", back_populates="product")
+
+
+class ProductOrder(Base):
+    __tablename__ = "product_orders"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    astrologer_id = Column(Integer, ForeignKey("astrologers.id"), nullable=True)
+    product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
+    quantity = Column(Integer, default=1)
+    total_amount = Column(Float, nullable=False)
+    platform_fee_amount = Column(Float, default=0.0)
+    astrologer_earning_amount = Column(Float, default=0.0)
+    status = Column(String, default="paid")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    settlement_due_date = Column(DateTime, nullable=True)
+    settled_at = Column(DateTime, nullable=True)
+
+    user = relationship("User", back_populates="product_orders")
+    astrologer = relationship("Astrologer", back_populates="product_orders")
+    product = relationship("Product", back_populates="orders")

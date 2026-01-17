@@ -13,6 +13,8 @@ import Wallet from './pages/Wallet';
 import PanchangPage from './pages/PanchangPage';
 import HoroscopePage from './pages/HoroscopePage';
 import KundliPage from './pages/KundliPage';
+import AstroShop from './pages/AstroShop';
+import FeatureExplorePage from './pages/FeatureExplorePage';
 
 import VerificationPendingRoute from './components/VerificationPendingRoute';
 
@@ -75,6 +77,23 @@ function App() {
         <Route path="/panchang" element={<PanchangPage />} />
         <Route path="/horoscope" element={<HoroscopePage />} />
         <Route path="/kundli" element={<KundliPage />} />
+        <Route path="/feature/:featureId" element={<FeatureExplorePage />} />
+        <Route path="/matching" element={<Navigate to="/feature/matching" replace />} />
+        <Route path="/career" element={<Navigate to="/feature/career" replace />} />
+        <Route path="/mental-health" element={<Navigate to="/feature/mental-health" replace />} />
+        <Route path="/today" element={<Navigate to="/feature/today" replace />} />
+        <Route path="/love" element={<Navigate to="/feature/love" replace />} />
+        <Route path="/education" element={<Navigate to="/feature/education" replace />} />
+        <Route path="/reports" element={<Navigate to="/feature/reports" replace />} />
+        <Route path="/community" element={<Navigate to="/feature/community" replace />} />
+        <Route
+          path="/shop"
+          element={
+            <ProtectedRoute allowedRoles={['user']}>
+              <AstroShop />
+            </ProtectedRoute>
+          }
+        />
 
         <Route 
           path="/verification-pending" 

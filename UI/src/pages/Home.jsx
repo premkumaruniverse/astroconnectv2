@@ -204,14 +204,14 @@ const Home = () => {
   const menuItems = [
     { title: 'Daily Panchang', icon: CalendarIcon, color: 'bg-orange-500', action: () => navigate('/panchang') },
     { title: 'Brihat Kundli', icon: DocumentTextIcon, color: 'bg-purple-500', action: () => navigate('/kundli') },
-    { title: 'Matching', icon: HeartIcon, color: 'bg-red-500', action: () => {} },
-    { title: 'Career', icon: BriefcaseIcon, color: 'bg-green-500', action: () => {} },
-    { title: 'Mental Health', icon: SparklesIcon, color: 'bg-teal-500', action: () => {} },
-    { title: 'Today', icon: StarIcon, color: 'bg-indigo-500', action: () => {} },
-    { title: 'Love', icon: HeartIcon, color: 'bg-rose-500', action: () => {} },
-    { title: 'Education', icon: AcademicCapIcon, color: 'bg-cyan-500', action: () => {} },
-    { title: 'Reports', icon: DocumentTextIcon, color: 'bg-gray-500', action: () => {} },
-    { title: 'Community', icon: UserGroupIcon, color: 'bg-violet-500', action: () => {} },
+    { title: 'Matching', icon: HeartIcon, color: 'bg-red-500', action: () => navigate('/feature/matching') },
+    { title: 'Career', icon: BriefcaseIcon, color: 'bg-green-500', action: () => navigate('/feature/career') },
+    { title: 'Mental Health', icon: SparklesIcon, color: 'bg-teal-500', action: () => navigate('/feature/mental-health') },
+    { title: 'Today', icon: StarIcon, color: 'bg-indigo-500', action: () => navigate('/feature/today') },
+    { title: 'Love', icon: HeartIcon, color: 'bg-rose-500', action: () => navigate('/feature/love') },
+    { title: 'Education', icon: AcademicCapIcon, color: 'bg-cyan-500', action: () => navigate('/feature/education') },
+    { title: 'Reports', icon: DocumentTextIcon, color: 'bg-gray-500', action: () => navigate('/feature/reports') },
+    { title: 'Community', icon: UserGroupIcon, color: 'bg-violet-500', action: () => navigate('/feature/community') },
   ];
 
   return (
@@ -363,24 +363,43 @@ const Home = () => {
 
         {/* Astro Shop Preview */}
         <div id="astro-shop">
-          <SectionHeader title={t('home_astro_shop')} actionText="Visit Store" onAction={() => {}} />
+          <SectionHeader
+            title={t('home_astro_shop')}
+            actionText="Visit Store"
+            onAction={() => navigate('/shop')}
+          />
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {shopItems.map((item) => (
-              <div key={item.id} className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-700 group">
-                <div className="h-32 bg-gray-200 dark:bg-gray-700 w-full relative">
-                   {/* Placeholder for image */}
-                   <div className="absolute inset-0 flex items-center justify-center text-gray-400">
+              <div
+                key={item.id}
+                onClick={() => navigate('/shop')}
+                className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-700 group cursor-pointer"
+              >
+                <div className="h-32 bg-gray-200 dark:bg-gray-700 w-full relative overflow-hidden">
+                  {item.image_url ? (
+                    <img
+                      src={item.image_url}
+                      alt={item.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-gray-400">
                       <ShoppingBagIcon className="h-8 w-8" />
-                   </div>
+                    </div>
+                  )}
                 </div>
                 <div className="p-3">
-                   <h4 className="font-medium text-gray-900 dark:text-white text-sm truncate">{item.name}</h4>
-                   <div className="flex justify-between items-center mt-2">
-                      <span className="text-amber-600 dark:text-amber-400 font-bold text-sm">₹{item.price}</span>
-                      <button className="p-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-amber-500 hover:text-white transition-colors">
-                        <ShoppingBagIcon className="h-4 w-4" />
-                      </button>
-                   </div>
+                  <h4 className="font-medium text-gray-900 dark:text-white text-sm truncate">
+                    {item.name}
+                  </h4>
+                  <div className="flex justify-between items-center mt-2">
+                    <span className="text-amber-600 dark:text-amber-400 font-bold text-sm">
+                      ₹{item.price}
+                    </span>
+                    <div className="p-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                      <ShoppingBagIcon className="h-4 w-4 text-gray-600 dark:text-gray-300" />
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}

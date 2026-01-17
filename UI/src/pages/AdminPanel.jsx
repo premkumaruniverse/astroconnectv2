@@ -256,7 +256,13 @@ const AdminPanel = () => {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <StatCard title="Total Revenue" value="₹12,45,000" change="+12%" icon={CurrencyRupeeIcon} color="bg-green-500" />
+          <StatCard
+            title="Shop Revenue"
+            value={stats ? `₹${(stats.shop_revenue || 0).toLocaleString()}` : '...'}
+            change="+0%"
+            icon={CurrencyRupeeIcon}
+            color="bg-green-500"
+          />
           <StatCard
             title="Active Users"
             value={stats ? stats.active_users.toLocaleString() : '...'}

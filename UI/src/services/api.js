@@ -38,6 +38,14 @@ export const astrologer = {
   toggleBoost: () => api.post('/api/astrologers/me/boost'),
   goLive: () => api.post('/api/astrologers/me/live'),
   getSessions: () => api.get('/api/astrologers/me/sessions'),
+  getProducts: () => api.get('/api/astrologers/me/shop/products'),
+   getShopOrders: () => api.get('/api/astrologers/me/shop/orders'),
+  createProduct: (formData) =>
+    api.post('/api/astrologers/me/shop/products', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  deleteProduct: (productId) =>
+    api.delete(`/api/astrologers/me/shop/products/${productId}`),
 };
 
 export const users = {
@@ -69,6 +77,8 @@ export const features = {
   getDailyPanchang: () => api.get('/api/features/panchang/daily'),
   getDailyHoroscope: () => api.get('/api/features/horoscope/daily'),
   getShopItems: () => api.get('/api/features/shop/items'),
+  purchaseProduct: (productId, quantity = 1) =>
+    api.post('/api/features/shop/purchase', { product_id: productId, quantity }),
   getNews: () => api.get('/api/features/news'),
   getAvailableReports: () => api.get('/api/features/reports/available'),
   getInsight: (category) => api.get(`/api/features/insights/${category}`),

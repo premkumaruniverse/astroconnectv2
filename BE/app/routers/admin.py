@@ -1,11 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from typing import List
 from sqlalchemy.orm import Session
+from sqlalchemy import func
+from datetime import datetime
 from app.schemas.astrologer import AstrologerProfile
 from app.schemas.news import NewsOut
 from app.dependencies import get_current_user
 from app.core.database import get_db
-from app.models import Astrologer, User, Session as SessionModel, News
+from app.models import Astrologer, User, Session as SessionModel, News, ProductOrder, Product, Transaction
 import cloudinary
 import cloudinary.uploader
 
@@ -14,6 +16,59 @@ router = APIRouter()
 def check_admin(user: User):
     if user.role != "admin":
         raise HTTPException(status_code=403, detail="Not authorized")
+
+
+@router.post("/shop/settlements/run")
+async def run_shop_settlements(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    check_admin(current_user)
+    now = datetime.utcnow()
+    orders = (
+        db.query(ProductOrder)
+        .filter(
+            ProductOrder.status == "paid",
+            ProductOrder.settlement_due_date <= now,
+        )
+        .all()
+    )
+    processed = 0
+    for order in orders:
+        astrologer = (
+            db.query(Astrologer)
+            .filter(Astrologer.id == order.astrologer_id)
+            .first()
+        )
+        if not astrologer or order.astrologer_earning_amount <= 0:
+            order.status = "settled"
+            order.settled_at = now
+            processed += 1
+            continue
+        astro_user = (
+            db.query(User)
+            .filter(User.id == astrologer.user_id)
+            .first()
+        )
+        if not astro_user:
+            order.status = "settled"
+            order.settled_at = now
+            processed += 1
+            continue
+        astro_user.wallet_balance += order.astrologer_earning_amount
+        txn = Transaction(
+            user_id=astro_user.id,
+            amount=order.astrologer_earning_amount,
+            type="credit",
+            description=f"Settlement for product {order.product.name}",
+            timestamp=now,
+        )
+        db.add(txn)
+        order.status = "settled"
+        order.settled_at = now
+        processed += 1
+    db.commit()
+    return {"processed": processed}
 
 @router.get("/applications", response_model=List[AstrologerProfile])
 async def get_applications(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -47,11 +102,22 @@ async def get_stats(current_user: User = Depends(get_current_user), db: Session 
     astrologers = db.query(Astrologer).filter(Astrologer.status == "approved").count()
     total_sessions = db.query(SessionModel).count()
     verification_requests = db.query(Astrologer).filter(Astrologer.status == "pending").count()
+    shop_revenue = (
+        db.query(func.coalesce(func.sum(ProductOrder.total_amount), 0.0))
+        .scalar()
+    )
+    pending_settlements = (
+        db.query(ProductOrder)
+        .filter(ProductOrder.status == "paid")
+        .count()
+    )
     return {
         "active_users": active_users,
         "astrologers": astrologers,
         "total_sessions": total_sessions,
         "verification_requests": verification_requests,
+        "shop_revenue": float(shop_revenue or 0.0),
+        "pending_settlements": pending_settlements,
     }
 
 

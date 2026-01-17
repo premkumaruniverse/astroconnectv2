@@ -1,18 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { 
-    ChartBarIcon, 
-    CurrencyDollarIcon, 
-    UserGroupIcon, 
-    StarIcon, 
+import {
+    ChartBarIcon,
+    CurrencyDollarIcon,
+    UserGroupIcon,
+    StarIcon,
     VideoCameraIcon,
     ClockIcon,
     BoltIcon,
     CurrencyRupeeIcon,
     SignalIcon,
     EyeIcon,
-    XMarkIcon
+    XMarkIcon,
+    ShoppingBagIcon,
+    PhotoIcon,
 } from '@heroicons/react/24/outline';
 import { astrologer, sessions } from '../services/api';
 
@@ -80,6 +82,16 @@ const AstrologerDashboard = () => {
   const [editingRate, setEditingRate] = useState(false);
   const [newRate, setNewRate] = useState(0);
   const [currentLoginMinutes, setCurrentLoginMinutes] = useState(0);
+  const [products, setProducts] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [productForm, setProductForm] = useState({
+    name: '',
+    price: '',
+    category: '',
+    description: '',
+    image: null,
+  });
+  const [creatingProduct, setCreatingProduct] = useState(false);
 
   const navigate = useNavigate();
 
@@ -110,6 +122,18 @@ const AstrologerDashboard = () => {
       
       const sessionsRes = await astrologer.getSessions();
       setActiveSessions(sessionsRes.data);
+      try {
+        const productsRes = await astrologer.getProducts();
+        setProducts(productsRes.data || []);
+      } catch (e) {
+        console.error("Failed to fetch products", e);
+      }
+      try {
+        const ordersRes = await astrologer.getShopOrders();
+        setOrders(ordersRes.data || []);
+      } catch (e) {
+        console.error("Failed to fetch shop orders", e);
+      }
     } catch (err) {
       if (err.response && err.response.status === 404) {
           // Handle missing profile logic if needed
@@ -117,6 +141,60 @@ const AstrologerDashboard = () => {
       console.error("Failed to fetch data", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleProductInputChange = (e) => {
+    const { name, value } = e.target;
+    setProductForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleProductImageChange = (e) => {
+    const file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
+    setProductForm((prev) => ({
+      ...prev,
+      image: file,
+    }));
+  };
+
+  const handleProductSubmit = async (e) => {
+    e.preventDefault();
+    if (!productForm.name || !productForm.price) {
+      return;
+    }
+    try {
+      setCreatingProduct(true);
+      const formData = new FormData();
+      formData.append('name', productForm.name);
+      formData.append('price', productForm.price);
+      if (productForm.category) formData.append('category', productForm.category);
+      if (productForm.description) formData.append('description', productForm.description);
+      if (productForm.image) formData.append('image', productForm.image);
+      const res = await astrologer.createProduct(formData);
+      setProducts((prev) => [res.data, ...prev]);
+      setProductForm({
+        name: '',
+        price: '',
+        category: '',
+        description: '',
+        image: null,
+      });
+    } catch (error) {
+      console.error("Failed to create product", error);
+    } finally {
+      setCreatingProduct(false);
+    }
+  };
+
+  const handleDeleteProduct = async (productId) => {
+    try {
+      await astrologer.deleteProduct(productId);
+      setProducts((prev) => prev.filter((p) => p.id !== productId));
+    } catch (error) {
+      console.error("Failed to delete product", error);
     }
   };
 
@@ -261,9 +339,9 @@ const AstrologerDashboard = () => {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <StatCard title="Total Earnings" value={`₹${profile.earnings ? profile.earnings.toFixed(2) : '0.00'}`} icon={CurrencyDollarIcon} color="bg-green-500" />
+          <StatCard title="Call Earnings" value={`₹${profile.earnings ? profile.earnings.toFixed(2) : '0.00'}`} icon={CurrencyDollarIcon} color="bg-green-500" />
+          <StatCard title="Shop Earnings" value={`₹${profile.product_earnings ? profile.product_earnings.toFixed(2) : '0.00'}`} icon={ShoppingBagIcon} color="bg-emerald-500" />
           <StatCard title="Total Calls" value={profile.total_calls || 0} icon={UserGroupIcon} color="bg-blue-500" />
-          <StatCard title="Avg. Rating" value={profile.rating || 5.0} icon={StarIcon} color="bg-amber-500" />
           <StatCard title="Login Hours" value={(currentLoginMinutes / 60).toFixed(1) + 'h'} icon={ClockIcon} color="bg-orange-500" />
         </div>
 
@@ -325,15 +403,154 @@ const AstrologerDashboard = () => {
                 </div>
             </div>
 
-            {/* Recent Reviews */}
+            {/* Astro Shop Management */}
             <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300 shadow-lg">
-                <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Recent Reviews</h2>
-                <div className="space-y-4">
-                     <div className="p-8 text-center text-gray-500 dark:text-gray-400 border border-dashed border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800/30">
-                        <StarIcon className="h-10 w-10 mx-auto mb-2 text-gray-300 dark:text-gray-600" />
-                        No reviews yet.
-                    </div>
+              <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white flex items-center">
+                <ShoppingBagIcon className="h-5 w-5 mr-2 text-emerald-500" />
+                Astro Shop
+              </h2>
+              <form onSubmit={handleProductSubmit} className="space-y-3 mb-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <input
+                      type="text"
+                      name="name"
+                      value={productForm.name}
+                      onChange={handleProductInputChange}
+                      placeholder="Product name"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <input
+                      type="number"
+                      name="price"
+                      value={productForm.price}
+                      onChange={handleProductInputChange}
+                      placeholder="Price (₹)"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
+                    />
+                  </div>
                 </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <input
+                      type="text"
+                      name="category"
+                      value={productForm.category}
+                      onChange={handleProductInputChange}
+                      placeholder="Category"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="inline-flex items-center px-3 py-2 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer text-xs text-gray-700 dark:text-gray-200">
+                      <PhotoIcon className="h-4 w-4 mr-2" />
+                      <span>{productForm.image ? productForm.image.name : "Upload image"}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleProductImageChange}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                </div>
+                <div>
+                  <textarea
+                    name="description"
+                    value={productForm.description}
+                    onChange={handleProductInputChange}
+                    rows={2}
+                    placeholder="Short description"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={creatingProduct}
+                  className="w-full inline-flex items-center justify-center px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {creatingProduct ? "Adding..." : "Add Product"}
+                </button>
+              </form>
+              <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+                {products.length === 0 ? (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    No products listed yet.
+                  </p>
+                ) : (
+                  products.map((p) => (
+                    <div
+                      key={p.id}
+                      className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-md bg-gray-200 dark:bg-gray-700 overflow-hidden flex items-center justify-center">
+                          {p.image_url ? (
+                            <img
+                              src={p.image_url}
+                              alt={p.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <ShoppingBagIcon className="h-5 w-5 text-gray-500" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                            {p.name}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            ₹{p.price} {p.category ? `• ${p.category}` : ""}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteProduct(p.id)}
+                        className="text-xs px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+              <div className="mt-4 border-t border-gray-200 dark:border-gray-700 pt-3">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                  Recent Orders
+                </h3>
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                  {orders.length === 0 ? (
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      No orders yet.
+                    </p>
+                  ) : (
+                    orders.map((o) => (
+                      <div
+                        key={o.id}
+                        className="flex items-between justify-between p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"
+                      >
+                        <div className="text-xs">
+                          <p className="font-semibold text-gray-900 dark:text-white">
+                            {o.product_name}
+                          </p>
+                          <p className="text-gray-500 dark:text-gray-400">
+                            Qty {o.quantity} • ₹{o.total_amount.toFixed(2)}
+                          </p>
+                          <p className="text-gray-500 dark:text-gray-400">
+                            {o.user_name} • {o.user_email}
+                          </p>
+                        </div>
+                        <div className="text-right text-[11px] text-gray-500 dark:text-gray-400">
+                          <p className="capitalize">{o.status}</p>
+                          <p>{new Date(o.created_at).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
             </div>
         </div>
       </main>

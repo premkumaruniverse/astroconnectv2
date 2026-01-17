@@ -16,6 +16,7 @@ class AstrologerProfile(AstrologerApplication):
     rating: float = 0.0
     total_calls: int = 0
     earnings: float = 0.0
+    product_earnings: float = 0.0
     rate: float = 10.0 # Default rate per minute
     
     # Dashboard Features
