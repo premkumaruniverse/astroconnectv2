@@ -18,11 +18,11 @@ export default defineConfig({
     minify: 'esbuild',
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          router: ['react-router-dom']
-        }
+        manualChunks: undefined
       }
     }
+  },
+  resolve: {
+    dedupe: ['react', 'react-dom']
   }
 })
