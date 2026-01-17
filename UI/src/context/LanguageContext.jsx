@@ -176,6 +176,8 @@ const translations = {
 };
 
 const detectInitialLanguage = () => {
+  if (typeof window === 'undefined') return 'en';
+  
   const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
   if (stored && translations[stored]) return stored;
 
