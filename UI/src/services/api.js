@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8000';
+const API_URL = 'https://astroconnectv2-8cyzqpdqu-prems-projects-bfd73380.vercel.app/';
 
 const api = axios.create({
   baseURL: API_URL,
