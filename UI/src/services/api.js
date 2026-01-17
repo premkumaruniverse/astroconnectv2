@@ -1,9 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'https://astroconnectv2-8cyzqpdqu-prems-projects-bfd73380.vercel.app/';
-
-// Add CORS handling
-api.defaults.headers.common['Access-Control-Allow-Origin'] = '*';
+const API_URL = import.meta.env.VITE_API_URL || 'https://astroconnectv2-8cyzqpdqu-prems-projects-bfd73380.vercel.app';
 
 const api = axios.create({
   baseURL: API_URL,
