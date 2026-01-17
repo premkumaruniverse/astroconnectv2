@@ -11,16 +11,12 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
-    minify: 'esbuild',
-    target: 'es2015',
+    minify: false,
+    target: 'esnext',
     rollupOptions: {
       output: {
-        manualChunks: undefined,
-        format: 'es'
+        format: 'iife'
       }
     }
-  },
-  resolve: {
-    dedupe: ['react', 'react-dom']
   }
 })
