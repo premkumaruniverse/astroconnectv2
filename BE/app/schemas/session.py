@@ -24,6 +24,7 @@ class Session(SessionBase):
     cost: Optional[float] = 0.0
     status: str  # active, completed, cancelled
     type: str
+    is_free_trial: Optional[bool] = False
     
     user: Optional[UserPublic] = None
     astrologer: Optional[AstrologerProfile] = None
