@@ -34,8 +34,7 @@ const ConsultationRoom = () => {
   // WebSocket Connection
   useEffect(() => {
     if (sessionId && myUserId) {
-        // Connect to WebSocket
-        const socket = new WebSocket(`ws://localhost:8000/ws/${sessionId}/${myUserId}`);
+        const socket = new WebSocket(`ws://localhost:8001/ws/${sessionId}/${myUserId}`);
 
         socket.onopen = () => {
             console.log("WebSocket Connected");

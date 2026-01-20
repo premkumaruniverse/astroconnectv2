@@ -21,9 +21,9 @@ import Navbar from '../components/Navbar';
 import { LanguageContext } from '../context/LanguageContext';
 import { astrologer, features } from '../services/api';
 
-const FeatureCard = ({ icon: Icon, title, color, onClick }) => (
+const FeatureCard = ({ icon: Icon, title, color, action }) => (
   <div 
-    onClick={onClick}
+    onClick={action}
     className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-md hover:shadow-lg transition-all cursor-pointer border border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center gap-3 group"
   >
     <div className={`p-3 rounded-full ${color} bg-opacity-10 group-hover:bg-opacity-20 transition-colors`}>
@@ -133,9 +133,13 @@ const Home = () => {
 
   const handleViewLatestNews = () => {
     setHasNewNews(false);
-    const section = document.getElementById('latest-news');
-    if (section) {
-      section.scrollIntoView({ behavior: 'smooth' });
+    if (latestNewsId) {
+      navigate(`/article/${latestNewsId}`);
+    } else {
+      const section = document.getElementById('articles-blog');
+      if (section) {
+        section.scrollIntoView({ behavior: 'smooth' });
+      }
     }
   };
 
@@ -202,16 +206,14 @@ const Home = () => {
   }, []);
 
   const menuItems = [
-    { title: 'Daily Panchang', icon: CalendarIcon, color: 'bg-orange-500', action: () => navigate('/panchang') },
-    { title: 'Brihat Kundli', icon: DocumentTextIcon, color: 'bg-purple-500', action: () => navigate('/kundli') },
-    { title: 'Matching', icon: HeartIcon, color: 'bg-red-500', action: () => {} },
-    { title: 'Career', icon: BriefcaseIcon, color: 'bg-green-500', action: () => {} },
-    { title: 'Mental Health', icon: SparklesIcon, color: 'bg-teal-500', action: () => {} },
-    { title: 'Today', icon: StarIcon, color: 'bg-indigo-500', action: () => {} },
-    { title: 'Love', icon: HeartIcon, color: 'bg-rose-500', action: () => {} },
-    { title: 'Education', icon: AcademicCapIcon, color: 'bg-cyan-500', action: () => {} },
-    { title: 'Reports', icon: DocumentTextIcon, color: 'bg-gray-500', action: () => {} },
-    { title: 'Community', icon: UserGroupIcon, color: 'bg-violet-500', action: () => {} },
+    { title: 'Matching', icon: HeartIcon, color: 'bg-red-500', action: () => navigate('/matching') },
+    { title: 'Career', icon: BriefcaseIcon, color: 'bg-green-500', action: () => navigate('/career') },
+    { title: 'Mental Health', icon: SparklesIcon, color: 'bg-teal-500', action: () => navigate('/mental-health') },
+    { title: 'Today', icon: StarIcon, color: 'bg-indigo-500', action: () => navigate('/today') },
+    { title: 'Love', icon: HeartIcon, color: 'bg-rose-500', action: () => navigate('/love') },
+    { title: 'Education', icon: AcademicCapIcon, color: 'bg-cyan-500', action: () => navigate('/education') },
+    { title: 'Reports', icon: DocumentTextIcon, color: 'bg-gray-500', action: () => navigate('/reports') },
+    { title: 'Community', icon: UserGroupIcon, color: 'bg-violet-500', action: () => navigate('/services') },
   ];
 
   return (
@@ -224,7 +226,7 @@ const Home = () => {
             <div className="flex items-center justify-between bg-emerald-500 text-white px-4 py-3 rounded-lg shadow">
               <div className="flex items-center gap-2">
                 <BoltIcon className="h-5 w-5" />
-                <span className="text-sm font-medium">New news update available</span>
+                <span className="text-sm font-medium">New article update available</span>
               </div>
               <button
                 onClick={handleViewLatestNews}
@@ -268,12 +270,15 @@ const Home = () => {
 
             {/* Kundli Card */}
             <div 
-              onClick={() => navigate('/kundli')}
+              onClick={() => {
+                console.log('Navigating to Brihat Kundli');
+                navigate('/brihat-kundli');
+              }}
               className="bg-white dark:bg-slate-800 rounded-lg p-2 md:p-3 lg:p-4 shadow-sm border border-gray-100 dark:border-gray-700 cursor-pointer hover:shadow-md transition-shadow h-24 md:h-32 lg:h-36 flex flex-col justify-between"
             >
               <div className="flex items-center gap-2">
                 <DocumentTextIcon className="h-4 w-4 md:h-5 md:w-5 text-purple-600 dark:text-purple-400" />
-                <h2 className="text-sm md:text-base font-bold text-gray-900 dark:text-white">Kundli</h2>
+                <h2 className="text-sm md:text-base font-bold text-gray-900 dark:text-white">Brihat Kundli</h2>
               </div>
               <div className="flex items-center justify-between">
                 <p className="text-[11px] md:text-xs text-gray-600 dark:text-gray-300">Quick generate</p>
@@ -314,7 +319,7 @@ const Home = () => {
           <SectionHeader title={t('home_explore_features')} />
           <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
             {menuItems.map((item, index) => (
-              <FeatureCard key={index} {...item} />
+              <FeatureCard key={index} icon={item.icon} title={item.title} color={item.color} action={item.action} />
             ))}
           </div>
         </div>
@@ -388,11 +393,15 @@ const Home = () => {
         </div>
 
         {/* News Section */}
-        <div id="latest-news">
+        <div id="articles-blog">
           <SectionHeader title={t('home_latest_news')} actionText="Read More" onAction={() => {}} />
           <div className="space-y-4">
              {news.map((item) => (
-               <div key={item.id} className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex gap-4">
+               <div 
+                 key={item.id} 
+                 onClick={() => navigate(`/article/${item.id}`)}
+                 className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex gap-4 cursor-pointer hover:shadow-md transition-shadow"
+               >
                   <div className="w-24 h-24 bg-gray-200 dark:bg-gray-700 rounded-lg flex-shrink-0 overflow-hidden">
                     {item.image_url ? (
                       <img

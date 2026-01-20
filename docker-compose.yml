@@ -33,18 +33,3 @@ services:
       - ./BE:/app
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
-  frontend:
-    build: ./UI
-    ports:
-      - "80:80"
-    depends_on:
-      - backend
-    networks:
-      - astroconnect-network
-
-volumes:
-  postgres_data:
-
-networks:
-  astroconnect-network:
-    driver: bridge

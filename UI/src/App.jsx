@@ -12,7 +12,13 @@ import ApplyAstrologer from './pages/ApplyAstrologer';
 import Wallet from './pages/Wallet';
 import PanchangPage from './pages/PanchangPage';
 import HoroscopePage from './pages/HoroscopePage';
-import KundliPage from './pages/KundliPage';
+import TodayPage from './pages/TodayPage';
+import BrihatKundliPage from './pages/BrihatKundliPage';
+import ServicesPage from './pages/ServicesPage';
+import MatchingPage from './pages/MatchingPage';
+import ReportsPage from './pages/ReportsPage';
+import InsightPage from './pages/InsightPage';
+import ArticleDetailPage from './pages/ArticleDetailPage';
 
 import VerificationPendingRoute from './components/VerificationPendingRoute';
 
@@ -74,7 +80,16 @@ function App() {
         
         <Route path="/panchang" element={<PanchangPage />} />
         <Route path="/horoscope" element={<HoroscopePage />} />
-        <Route path="/kundli" element={<KundliPage />} />
+        <Route path="/today" element={<TodayPage />} />
+        <Route path="/brihat-kundli" element={<BrihatKundliPage />} />
+        <Route path="/services" element={<ServicesPage />} />
+        <Route path="/matching" element={<MatchingPage />} />
+        <Route path="/reports" element={<ReportsPage />} />
+        <Route path="/career" element={<InsightPage category="career" />} />
+        <Route path="/mental-health" element={<InsightPage category="mental-health" />} />
+        <Route path="/love" element={<InsightPage category="love" />} />
+        <Route path="/education" element={<InsightPage category="education" />} />
+        <Route path="/article/:id" element={<ArticleDetailPage />} />
 
         <Route 
           path="/verification-pending" 

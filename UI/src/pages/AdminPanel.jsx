@@ -370,7 +370,7 @@ const AdminPanel = () => {
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
                   <NewspaperIcon className="h-5 w-5 mr-2 text-red-500" />
-                  Latest News
+                  Articles and Blog
                 </h2>
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -385,7 +385,7 @@ const AdminPanel = () => {
                       value={newsForm.title}
                       onChange={handleNewsInputChange}
                       className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                      placeholder="Enter news headline"
+                      placeholder="Enter article headline"
                     />
                   </div>
                   <div>
@@ -411,7 +411,7 @@ const AdminPanel = () => {
                       onChange={handleNewsInputChange}
                       rows={4}
                       className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                      placeholder="Full news content"
+                      placeholder="Full article content"
                     />
                   </div>
                   <div>
@@ -436,12 +436,12 @@ const AdminPanel = () => {
                     disabled={submittingNews}
                     className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    {submittingNews ? "Publishing..." : "Publish News"}
+                    {submittingNews ? "Publishing..." : "Publish Article"}
                   </button>
                 </form>
                 <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">
                   {newsItems.length === 0 ? (
-                    <p className="text-gray-500 text-sm">No news published yet.</p>
+                    <p className="text-gray-500 text-sm">No articles published yet.</p>
                   ) : (
                     newsItems.map((item) => (
                       <div

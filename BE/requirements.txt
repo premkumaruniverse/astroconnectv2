@@ -2,7 +2,7 @@ fastapi
 uvicorn
 sqlalchemy
 psycopg2-binary
-openai
+langchain-google-genai
 python-dotenv
 pydantic[email]
 python-multipart

@@ -139,6 +139,13 @@ const Navbar = () => {
               </button>
               <button
                 type="button"
+                onClick={() => navigate('/services')}
+                className="whitespace-nowrap text-gray-600 dark:text-gray-300 hover:text-amber-600 dark:hover:text-amber-400 transition-colors font-medium"
+              >
+                Services
+              </button>
+              <button
+                type="button"
                 onClick={() => handleScrollToSection('astro-shop')}
                 className="whitespace-nowrap text-gray-600 dark:text-gray-300 hover:text-amber-600 dark:hover:text-amber-400 transition-colors font-medium"
               >

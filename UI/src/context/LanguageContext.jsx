@@ -54,7 +54,7 @@ const translations = {
     home_live_astrologers: 'Live Astrologers',
     home_explore_features: 'Explore Features',
     home_astro_shop: 'Astro Shop',
-    home_latest_news: 'Latest News',
+    home_latest_news: 'Articles and Blog',
   },
   hi: {
     nav_home: 'होम',

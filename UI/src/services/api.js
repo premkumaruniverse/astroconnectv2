@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://astroconnectv2-8cyzqpdqu-prems-projects-bfd73380.vercel.app';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -66,14 +66,19 @@ export const chat = {
 };
 
 export const features = {
-  getDailyPanchang: () => api.get('/api/features/panchang/daily'),
+  getDailyPanchang: (date) => {
+    const url = date ? `/api/features/panchang/daily?date=${date}` : '/api/features/panchang/daily';
+    return api.get(url);
+  },
   getDailyHoroscope: () => api.get('/api/features/horoscope/daily'),
   getShopItems: () => api.get('/api/features/shop/items'),
   getNews: () => api.get('/api/features/news'),
+  getNewsById: (id) => api.get(`/api/features/news/${id}`),
   getAvailableReports: () => api.get('/api/features/reports/available'),
   getInsight: (category) => api.get(`/api/features/insights/${category}`),
   checkMatching: (boyData, girlData) => api.post('/api/features/matching/check', { boy_details: boyData, girl_details: girlData }),
-  generateKundli: (data) => api.post('/api/features/kundli/generate', data),
+  getTodayInsights: () => api.get('/api/features/today/insights'),
+  getServices: () => api.get('/api/features/services'),
 };
 
 export const sessions = {
