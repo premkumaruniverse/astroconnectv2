@@ -163,6 +163,15 @@ const VideoCall = ({ onEndCall, incomingSignal, sendSignal }) => {
             <div className="w-full h-full flex flex-col items-center justify-center bg-gray-200 dark:bg-gray-800 transition-colors duration-300">
                 <UserCircleIcon className="h-48 w-48 text-gray-400 dark:text-gray-600 transition-colors duration-300" />
                 <p className="mt-4 text-gray-500 dark:text-gray-400 animate-pulse">Waiting for connection...</p>
+                {connectionStatus === 'new' && !incomingCall && (
+                    <button 
+                        onClick={startCall}
+                        className="mt-4 px-6 py-2 bg-green-500 hover:bg-green-600 text-white rounded-full font-semibold shadow-lg transition-transform transform hover:scale-105 flex items-center"
+                    >
+                        <PlayIcon className="h-5 w-5 mr-2" />
+                        Start Call
+                    </button>
+                )}
             </div>
         ) : (
             <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />
@@ -210,11 +219,6 @@ const VideoCall = ({ onEndCall, incomingSignal, sendSignal }) => {
           <button onClick={toggleVideo} className={`p-3 rounded-full transition-colors ${isVideoOff ? 'bg-red-500 text-white' : 'bg-gray-700/50 text-white hover:bg-gray-600/70'}`}>
             {isVideoOff ? <VideoCameraSlashIcon className="h-6 w-6" /> : <VideoCameraIcon className="h-6 w-6" />}
           </button>
-          {connectionStatus === 'new' && !incomingCall && (
-            <button onClick={startCall} className="p-3 bg-green-500 text-white rounded-full hover:bg-green-600 transition-colors shadow-lg">
-              <PhoneIcon className="h-6 w-6" />
-            </button>
-          )}
           <button onClick={onEndCall} className="p-3 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors shadow-lg">
             <PhoneXMarkIcon className="h-6 w-6" />
           </button>

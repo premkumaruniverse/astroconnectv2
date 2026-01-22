@@ -81,6 +81,10 @@ export const features = {
   getServices: () => api.get('/api/features/services'),
 };
 
+export const aiGuru = {
+  chat: (message, history) => api.post('/api/features/ai-guru/chat', { message, history }),
+};
+
 export const sessions = {
   start: (astrologerId) => api.post('/api/sessions/start', { astrologer_id: astrologerId }),
   getById: (sessionId) => api.get(`/api/sessions/${sessionId}`),

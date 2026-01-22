@@ -6,11 +6,16 @@ from app.core.database import get_db
 from app.models import News
 from app.schemas.news import NewsOut
 from app.services.openai_service import openai_service
+from app.services.ai_guru_service import ai_guru_service
 from datetime import datetime
 
 router = APIRouter()
 
 # --- Mock Data Models ---
+
+class ChatRequest(BaseModel):
+    message: str
+    history: List[Dict[str, str]] = []
 
 class ShopItem(BaseModel):
     id: int
@@ -103,6 +108,25 @@ def get_daily_horoscope():
         {"sign": sign, "prediction": f"Today is a great day for {sign}. Focus on your goals."}
         for sign in signs
     ]
+
+@router.post("/ai-guru/chat")
+async def chat_with_guru(request: ChatRequest):
+    """Chat with AI Guru"""
+    try:
+        # Append the new message to history
+        messages = request.history + [{"role": "user", "content": request.message}]
+        
+        response = await ai_guru_service.get_response(messages)
+        
+        # Extract the content from OpenRouter response
+        try:
+            content = response["choices"][0]["message"]["content"]
+            return {"response": content}
+        except (KeyError, IndexError):
+            return {"response": "The spirits are silent right now. Please try again later."}
+    except Exception as e:
+        print(f"AI Guru Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/shop/items", response_model=List[ShopItem])
 def get_shop_items():

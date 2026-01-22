@@ -65,7 +65,6 @@ class Session(Base):
     cost = Column(Float, default=0.0)
     status = Column(String, default="active")  # active, completed, cancelled
     type = Column(String, default="call") # call, chat
-    is_free_trial = Column(Boolean, default=False)
 
     # Relationships
     user = relationship("User", back_populates="sessions_as_user", foreign_keys=[user_id])
