@@ -20,6 +20,7 @@ import {
 import Navbar from '../components/Navbar';
 import { LanguageContext } from '../context/LanguageContext';
 import { astrologer, features } from '../services/api';
+import AIGuruChat from '../components/AIGuruChat';
 
 const FeatureCard = ({ icon: Icon, title, color, action }) => (
   <div 
@@ -70,6 +71,7 @@ const Home = () => {
   const [astrologersList, setAstrologersList] = useState([]);
   const [latestNewsId, setLatestNewsId] = useState(null);
   const [hasNewNews, setHasNewNews] = useState(false);
+  const [isGuruOpen, setIsGuruOpen] = useState(false);
   const { t } = useContext(LanguageContext);
 
   const fetchDashboardData = async () => {
@@ -206,6 +208,7 @@ const Home = () => {
   }, []);
 
   const menuItems = [
+    { title: 'AI Guru', icon: SparklesIcon, color: 'bg-amber-500', action: () => setIsGuruOpen(true) },
     { title: 'Matching', icon: HeartIcon, color: 'bg-red-500', action: () => navigate('/matching') },
     { title: 'Career', icon: BriefcaseIcon, color: 'bg-green-500', action: () => navigate('/career') },
     { title: 'Mental Health', icon: SparklesIcon, color: 'bg-teal-500', action: () => navigate('/mental-health') },
@@ -218,6 +221,7 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-900 transition-colors duration-300">
+      {isGuruOpen && <AIGuruChat onClose={() => setIsGuruOpen(false)} />}
       <Navbar />
       
       <main className="container mx-auto px-4 py-6 space-y-8 pb-20">

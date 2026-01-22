@@ -20,7 +20,7 @@ const Chat = ({ user, messages, onSendMessage, onEndChat }) => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-gray-800 rounded-lg shadow-lg transition-colors duration-300">
+    <div className="flex flex-col h-[70vh] bg-white dark:bg-gray-800 rounded-lg shadow-lg transition-colors duration-300">
       <div className="flex justify-between items-center p-4 bg-gray-100 dark:bg-gray-900 rounded-t-lg transition-colors duration-300">
         <h3 className="text-lg font-semibold text-gray-800 dark:text-white transition-colors duration-300">Chat with Astrologer</h3>
         <button onClick={onEndChat} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white transition-colors duration-300">

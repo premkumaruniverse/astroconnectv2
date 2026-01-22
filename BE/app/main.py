@@ -6,8 +6,6 @@ from app.core.config import PROJECT_NAME
 from app.core.database import engine, Base
 from app import models # Import models to register them with Base
 from app.notifications import manager
-from app.signaling import manager as signaling_manager
-import json
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -59,18 +57,3 @@ async def notifications_ws(websocket: WebSocket):
             await websocket.receive_text()
     except WebSocketDisconnect:
         await manager.disconnect(websocket)
-
-@app.websocket("/ws/{session_id}/{user_id}")
-async def websocket_endpoint(websocket: WebSocket, session_id: str, user_id: str):
-    await signaling_manager.connect(websocket, session_id, user_id)
-    try:
-        while True:
-            data = await websocket.receive_text()
-            await signaling_manager.broadcast_to_room(data, session_id, user_id)
-    except WebSocketDisconnect:
-        signaling_manager.disconnect(session_id, user_id)
-        await signaling_manager.broadcast_to_room(
-            json.dumps({"type": "user_disconnected", "user_id": user_id}), 
-            session_id, 
-            user_id
-        )
