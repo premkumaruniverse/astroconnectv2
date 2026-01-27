@@ -99,6 +99,7 @@ async def get_daily_panchang(date: Optional[str] = Query(None, description="Date
         date = datetime.now().strftime("%Y-%m-%d")
     
     panchang_data = await openai_service.generate_daily_panchang(date)
+    print("@@@@@@@@@@@",panchang_data)
     return panchang_data
 
 @router.get("/horoscope/daily", response_model=List[HoroscopeData])
