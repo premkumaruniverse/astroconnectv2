@@ -1,6 +1,8 @@
 from app.services.openai_service import openai_service
 from typing import Dict, Any
 import json
+import httpx
+from app.core.config import OPENROUTER_API_KEY, OPENROUTER_URL, SITE_URL, PROJECT_NAME
 
 class KundliService:
     
@@ -14,7 +16,8 @@ class KundliService:
         Time: {birth_data.get('time')}
         Place: {birth_data.get('place')}
         
-        Provide JSON response with:
+        You must return ONLY a valid JSON object. Do not include any markdown formatting like ```json ... ```.
+        The JSON structure must be exactly as follows:
         {{
             "basic_info": {{
                 "rashi": "moon sign",
@@ -23,32 +26,79 @@ class KundliService:
                 "tithi": "lunar day"
             }},
             "planetary_positions": [
-                {{"planet": "Sun", "sign": "Aries", "house": 1, "degree": "15°30'"}},
-                {{"planet": "Moon", "sign": "Taurus", "house": 2, "degree": "22°45'"}}
+                {{"planet": "Sun", "sign": "Aries", "house": 1, "degree": "15°30'", "strength": "Strong"}},
+                {{"planet": "Moon", "sign": "Taurus", "house": 2, "degree": "22°45'", "strength": "Moderate"}}
             ],
             "predictions": {{
-                "personality": "brief personality traits",
+                "personality": "detailed personality traits",
                 "career": "career prospects and suitable fields",
                 "health": "health tendencies and precautions",
                 "relationships": "marriage and relationship insights",
                 "finances": "financial prospects and advice"
             }},
             "remedies": [
-                "Wear Ruby gemstone for Sun strength",
-                "Chant Gayatri Mantra daily"
+                "remedy 1",
+                "remedy 2"
             ],
             "lucky_elements": {{
                 "numbers": [1, 3, 9],
                 "colors": ["Red", "Orange"],
                 "days": ["Sunday", "Tuesday"],
-                "direction": "East"
+                "direction": "East",
+                "gemstone": "Gemstone name"
+            }},
+            "dasha_periods": {{
+                "current_dasha": "Current Mahadasha",
+                "period": "Start Year - End Year",
+                "effects": "Effects of current dasha"
             }}
         }}
         """
         
         try:
-            # For now, return structured data - can be enhanced with actual LLM call
-            return self._generate_sample_kundli(birth_data)
+            headers = {
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                "HTTP-Referer": SITE_URL,
+                "X-Title": PROJECT_NAME,
+                "Content-Type": "application/json"
+            }
+            
+            data = {
+                "model": "google/gemini-2.0-flash-exp:free",
+                "messages": [
+                    {"role": "system", "content": "You are an expert Vedic Astrologer. You provide accurate and detailed Kundli analysis in strict JSON format."},
+                    {"role": "user", "content": prompt}
+                ],
+                "response_format": {"type": "json_object"}
+            }
+            
+            async with httpx.AsyncClient() as client:
+                print(f"Calling OpenRouter API with model: {data['model']}")
+                response = await client.post(
+                    OPENROUTER_URL, 
+                    headers=headers, 
+                    json=data, 
+                    timeout=60.0
+                )
+                
+                if response.status_code == 200:
+                    print("OpenRouter API success")
+                    result = response.json()
+                    content = result['choices'][0]['message']['content']
+                    
+                    # Clean up content if it contains markdown code blocks
+                    if "```json" in content:
+                        content = content.split("```json")[1].split("```")[0].strip()
+                    elif "```" in content:
+                        content = content.split("```")[1].strip()
+                        
+                    return json.loads(content)
+                else:
+                    error_msg = f"OpenRouter API error: {response.status_code} - {response.text}"
+                    print(error_msg)
+                    # Fallback to sample data
+                    return self._generate_sample_kundli(birth_data)
+                    
         except Exception as e:
             print(f"Kundli generation error: {e}")
             return self._generate_sample_kundli(birth_data)
