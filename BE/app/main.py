@@ -5,7 +5,7 @@ from app.routers import auth, astrologers, admin, wallet, chat, sessions, users,
 from app.core.config import PROJECT_NAME
 from app.core.database import engine, Base
 from app import models # Import models to register them with Base
-from app.notifications import manager
+from app.notifications import manager, room_manager
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -13,9 +13,16 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(title=PROJECT_NAME)
 
 # CORS Configuration
+origins = [
+    "http://localhost",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:8000",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -35,9 +42,10 @@ async def options_handler(request: Request, path: str):
     return Response(
         status_code=200,
         headers={
-            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Origin": request.headers.get("origin", "*"),
             "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
             "Access-Control-Allow-Headers": "*",
+            "Access-Control-Allow-Credentials": "true",
         }
     )
 
@@ -57,3 +65,20 @@ async def notifications_ws(websocket: WebSocket):
             await websocket.receive_text()
     except WebSocketDisconnect:
         await manager.disconnect(websocket)
+
+@app.websocket("/ws/{session_id}/{user_id}")
+async def consultation_ws(websocket: WebSocket, session_id: str, user_id: str):
+    print(f"WS Connection attempt: {session_id}, {user_id}")
+    await room_manager.connect(websocket, session_id)
+    try:
+        while True:
+            data = await websocket.receive_json()
+            # Forward the message to others in the room
+            await room_manager.broadcast(data, session_id, sender_ws=websocket)
+    except WebSocketDisconnect:
+        await room_manager.disconnect(websocket, session_id)
+        # Notify others that user disconnected
+        await room_manager.broadcast({"type": "user_disconnected", "user_id": user_id}, session_id, sender_ws=websocket)
+    except Exception as e:
+        print(f"WS Error: {e}")
+        await room_manager.disconnect(websocket, session_id)
