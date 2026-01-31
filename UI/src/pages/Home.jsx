@@ -148,7 +148,9 @@ const Home = () => {
   useEffect(() => {
     let ws;
     try {
-      ws = new WebSocket('ws://localhost:8000/ws/notifications');
+      const apiUrl = (import.meta.env.VITE_API_URL || window.location.origin).replace(/\/$/, '');
+      const wsBase = apiUrl.replace(/^http:/, 'ws:').replace(/^https:/, 'wss:');
+      ws = new WebSocket(`${wsBase}/ws/notifications`);
       ws.onmessage = async (evt) => {
         try {
           const data = JSON.parse(evt.data);

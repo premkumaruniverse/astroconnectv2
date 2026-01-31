@@ -37,8 +37,9 @@ const ConsultationRoom = () => {
   useEffect(() => {
     if (sessionId && myUserId) {
         // Use dynamically determined API URL but switch protocol to ws/wss
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-        const wsUrl = apiUrl.replace(/^http/, 'ws') + `/ws/${sessionId}/${myUserId}`;
+        const apiUrl = (import.meta.env.VITE_API_URL || window.location.origin).replace(/\/$/, '');
+        const wsBase = apiUrl.replace(/^http:/, 'ws:').replace(/^https:/, 'wss:');
+        const wsUrl = `${wsBase}/ws/${sessionId}/${myUserId}`;
         
         const socket = new WebSocket(wsUrl);
 
