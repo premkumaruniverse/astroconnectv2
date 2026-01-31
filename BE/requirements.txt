@@ -1,5 +1,5 @@
 fastapi
-uvicorn
+uvicorn[standard]
 sqlalchemy
 psycopg2-binary
 langchain-google-genai
@@ -13,3 +13,4 @@ pytest
 httpx
 cloudinary
 openai
+websockets
