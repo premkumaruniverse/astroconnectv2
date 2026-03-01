@@ -8,15 +8,26 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  server: {
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/auth': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/ws': {
+        target: 'http://localhost:8000',
+        ws: true,
+      },
+    }
+  },
   build: {
     outDir: 'dist',
-    sourcemap: false,
-    minify: false,
-    target: 'esnext',
-    rollupOptions: {
-      output: {
-        format: 'iife'
-      }
-    }
+    sourcemap: true,
   }
 })
+
