@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import { UsersIcon, CurrencyRupeeIcon, ShieldCheckIcon, DocumentTextIcon, XMarkIcon, CheckIcon, XCircleIcon, PhotoIcon } from '@heroicons/react/24/outline';
 import { NewspaperIcon } from '@heroicons/react/24/solid';
-import { admin, shop } from '../services/api';
+import { admin, shop, API_URL } from '../services/api';
 import { ShoppingBagIcon } from '@heroicons/react/24/outline';
 
 const StatCard = ({ title, value, change, icon: Icon, color }) => (
@@ -318,7 +318,7 @@ const AdminPanel = () => {
                     <div className="flex items-center space-x-4">
                       <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center font-bold text-gray-600 dark:text-gray-400 overflow-hidden">
                         {app.profile_image ? (
-                          <img src={`http://localhost:8000${app.profile_image}`} alt="Profile" className="w-full h-full object-cover" />
+                          <img src={`${API_URL}${app.profile_image}`} alt="Profile" className="w-full h-full object-cover" />
                         ) : (
                           app.name.charAt(0)
                         )}

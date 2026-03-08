@@ -21,7 +21,7 @@ import {
 } from '@heroicons/react/24/solid';
 import Navbar from '../components/Navbar';
 import { LanguageContext } from '../context/LanguageContext';
-import { astrologer, features, shop } from '../services/api';
+import { astrologer, features, shop, API_URL } from '../services/api';
 import AIGuruChat from '../components/AIGuruChat';
 
 const FeatureCard = ({ icon: Icon, title, color, action }) => (
@@ -354,7 +354,7 @@ const Home = () => {
                 <div className="relative mb-4">
                   <div className="w-20 h-20 md:w-24 md:h-24 rounded-full p-1 bg-gradient-to-tr from-amber-500 to-orange-400">
                     <div className="w-full h-full rounded-full bg-white dark:bg-slate-700 flex items-center justify-center text-2xl font-black overflow-hidden border-2 border-white dark:border-slate-800">
-                      {astro.profile_image ? <img src={`http://localhost:8000${astro.profile_image}`} alt={astro.name} className="w-full h-full object-cover" /> : astro.name[0]}
+                      {astro.profile_image ? <img src={`${API_URL}${astro.profile_image}`} alt={astro.name} className="w-full h-full object-cover" /> : astro.name[0]}
                     </div>
                   </div>
                   {astro.is_live && <span className="absolute top-0 right-0 px-3 py-1 bg-red-500 text-white text-[10px] font-black rounded-full shadow-lg animate-pulse ring-4 ring-white dark:ring-slate-800">LIVE</span>}

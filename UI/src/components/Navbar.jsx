@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { SparklesIcon, SunIcon, MoonIcon, Bars3Icon, XMarkIcon, UserCircleIcon } from '@heroicons/react/24/solid';
-import { wallet } from '../services/api';
+import { wallet, API_URL } from '../services/api';
 import { ThemeContext } from '../context/ThemeContext';
 import { LanguageContext } from '../context/LanguageContext';
 
@@ -183,7 +183,7 @@ const Navbar = () => {
                 >
                   <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-400 to-amber-600 flex items-center justify-center shadow-sm overflow-hidden">
                     {profileImage ? (
-                      <img src={`http://localhost:8000${profileImage}`} alt="Avatar" className="w-full h-full object-cover" />
+                      <img src={`${API_URL}${profileImage}`} alt="Avatar" className="w-full h-full object-cover" />
                     ) : userName ? (
                       <span className="text-[10px] font-black text-white uppercase">{userName[0]}</span>
                     ) : (

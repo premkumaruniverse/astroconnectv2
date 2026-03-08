@@ -300,7 +300,7 @@ const ConsultationRoom = () => {
                     <div className="flex items-center space-x-3 lg:space-x-4 w-full md:w-auto">
                         <div className="h-10 w-10 lg:h-12 lg:w-12 rounded-full bg-amber-100 dark:bg-amber-900 flex items-center justify-center text-amber-600 dark:text-amber-400 font-bold text-lg lg:text-xl shrink-0 overflow-hidden">
                             {partnerData?.profile_image ? (
-                                <img src={`http://localhost:8000${partnerData.profile_image}`} alt="Partner" className="w-full h-full object-cover" />
+                                <img src={`${API_URL}${partnerData.profile_image}`} alt="Partner" className="w-full h-full object-cover" />
                             ) : (
                                 partnerData?.name?.charAt(0) || 'P'
                             )}

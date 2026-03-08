@@ -18,7 +18,7 @@ import {
     StarIcon,
     CameraIcon
 } from '@heroicons/react/24/solid';
-import { users, astrologer } from '../services/api';
+import { users, astrologer, API_URL } from '../services/api';
 import Navbar from '../components/Navbar';
 import { LanguageContext } from '../context/LanguageContext';
 
@@ -140,7 +140,7 @@ const ProfilePage = () => {
                             <div className="relative group cursor-pointer" onClick={() => document.getElementById('photo-upload').click()}>
                                 <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-amber-400 to-amber-600 flex items-center justify-center text-3xl font-black text-white shadow-xl shadow-amber-500/30 mb-4 border-4 border-white dark:border-slate-700 overflow-hidden">
                                     {profile.profile_image ? (
-                                        <img src={`http://localhost:8000${profile.profile_image}`} alt="Profile" className="w-full h-full object-cover" />
+                                        <img src={`${API_URL}${profile.profile_image}`} alt="Profile" className="w-full h-full object-cover" />
                                     ) : profile.name ? (
                                         profile.name[0].toUpperCase()
                                     ) : (
