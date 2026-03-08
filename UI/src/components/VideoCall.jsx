@@ -19,8 +19,11 @@ const VideoCall = ({ onEndCall, incomingSignal, sendSignal }) => {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
                 { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun2.l.google.com:19302' }
-            ]
+                { urls: 'stun:stun2.l.google.com:19302' },
+                { urls: 'stun:stun3.l.google.com:19302' },
+                { urls: 'stun:stun4.l.google.com:19302' },
+            ],
+            iceCandidatePoolSize: 10,
         });
 
         pc.onicecandidate = (event) => {
@@ -30,10 +33,15 @@ const VideoCall = ({ onEndCall, incomingSignal, sendSignal }) => {
         };
 
         pc.ontrack = (event) => {
-            console.log("Remote track received:", event.streams[0]);
-            setRemoteStream(event.streams[0]);
+            console.log("Remote track received:", event.track.kind);
+            const stream = event.streams[0];
+            setRemoteStream(stream);
             if (remoteVideoRef.current) {
-                remoteVideoRef.current.srcObject = event.streams[0];
+                remoteVideoRef.current.srcObject = stream;
+                remoteVideoRef.current.onloadedmetadata = () => {
+                    console.log("Remote video metadata loaded, playing...");
+                    remoteVideoRef.current.play().catch(e => console.error("Error playing remote video:", e));
+                };
             }
         };
 
