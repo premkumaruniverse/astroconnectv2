@@ -122,24 +122,48 @@ const VideoCall = ({ onEndCall, incomingSignal, sendSignal }) => {
         }
     }, [incomingSignal]);
 
+    const candidateQueue = useRef([]);
+
     const handleSignal = async (data) => {
         const pc = peerConnection.current;
         if (!pc) return;
 
         try {
-            if (data.type === 'answer') {
+            if (data.type === 'offer') {
+                console.log("Processing Offer via handleSignal");
+                await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+                const answer = await pc.createAnswer();
+                await pc.setLocalDescription(answer);
+                sendSignal({ type: 'answer', sdp: answer });
+                processQueuedCandidates();
+            } else if (data.type === 'answer') {
                 console.log("Handling Answer");
-                if (pc.signalingState !== "stable") {
-                    await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
-                }
+                await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+                processQueuedCandidates();
             } else if (data.type === 'candidate') {
-                console.log("Handling Candidate");
-                if (data.candidate) {
+                if (pc.remoteDescription && pc.remoteDescription.type) {
+                    console.log("Adding ICE candidate immediately");
                     await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+                } else {
+                    console.log("Queueing ICE candidate - remote description not set");
+                    candidateQueue.current.push(data.candidate);
                 }
             }
         } catch (err) {
             console.error("Error handling signal:", err);
+        }
+    };
+
+    const processQueuedCandidates = async () => {
+        const pc = peerConnection.current;
+        while (candidateQueue.current.length > 0) {
+            const candidate = candidateQueue.current.shift();
+            try {
+                await pc.addIceCandidate(new RTCIceCandidate(candidate));
+                console.log("Successfully added queued candidate");
+            } catch (e) {
+                console.error("Error adding queued candidate", e);
+            }
         }
     };
 
@@ -154,6 +178,7 @@ const VideoCall = ({ onEndCall, incomingSignal, sendSignal }) => {
             sendSignal({ type: 'answer', sdp: answer });
             setIncomingCall(null);
             console.log("Accepted call and sent answer");
+            processQueuedCandidates();
         } catch (err) {
             console.error("Error accepting call:", err);
         }
