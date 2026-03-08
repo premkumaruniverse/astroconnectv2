@@ -98,6 +98,10 @@ const VideoCall = ({ onEndCall, incomingSignal, sendSignal }) => {
                 localStream.current = stream;
                 if (localVideoRef.current) {
                     localVideoRef.current.srcObject = stream;
+                    localVideoRef.current.onloadedmetadata = () => {
+                        console.log("Local video metadata loaded, playing...");
+                        localVideoRef.current.play().catch(e => console.error("Error playing local video:", e));
+                    };
                 }
                 stream.getTracks().forEach(track => {
                     pc.addTrack(track, stream);
@@ -105,7 +109,13 @@ const VideoCall = ({ onEndCall, incomingSignal, sendSignal }) => {
             })
             .catch(err => {
                 console.error("Media Error (Camera/Mic access):", err);
-                alert("Camera Access Error: " + err.message);
+                if (err.name === 'NotAllowedError') {
+                    alert("Camera Permission Denied: Please allow camera access in your browser settings.");
+                } else if (err.name === 'NotFoundError') {
+                    alert("No Camera Found: Please ensure your camera is connected.");
+                } else {
+                    alert("Camera Access Error: " + err.message);
+                }
                 setConnectionStatus('failed');
             });
 
