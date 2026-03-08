@@ -64,7 +64,14 @@ const VideoCall = ({ onEndCall, incomingSignal, sendSignal }) => {
     useEffect(() => {
         const pc = initPeerConnection();
 
-        // Get Media
+        // Get Media with safety check for production (HTTPS/Localhost only)
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            console.error("Media Devices API not available. This usually happens on non-HTTPS connections.");
+            alert("Security Error: Video calling requires a secure (HTTPS) connection to access your camera. Please contact the administrator.");
+            setConnectionStatus('failed');
+            return;
+        }
+
         navigator.mediaDevices.getUserMedia({
             video: {
                 width: { ideal: 640 },
@@ -85,7 +92,8 @@ const VideoCall = ({ onEndCall, incomingSignal, sendSignal }) => {
             })
             .catch(err => {
                 console.error("Media Error (Camera/Mic access):", err);
-                alert("Could not access camera or microphone. Please ensure permissions are granted.");
+                alert("Camera Access Error: " + err.message);
+                setConnectionStatus('failed');
             });
 
         return () => {
