@@ -34,22 +34,35 @@ const VideoCall = ({ onEndCall, incomingSignal, sendSignal }) => {
 
         pc.ontrack = (event) => {
             console.log("Remote track received:", event.track.kind);
-            const stream = event.streams[0];
-            setRemoteStream(stream);
-            if (remoteVideoRef.current) {
-                remoteVideoRef.current.srcObject = stream;
-                remoteVideoRef.current.onloadedmetadata = () => {
-                    console.log("Remote video metadata loaded, playing...");
-                    remoteVideoRef.current.play().catch(e => console.error("Error playing remote video:", e));
-                };
-            }
+            setRemoteStream(prev => {
+                if (prev) {
+                    prev.addTrack(event.track);
+                    return prev;
+                }
+                const newStream = new MediaStream([event.track]);
+                if (remoteVideoRef.current) {
+                    remoteVideoRef.current.srcObject = newStream;
+                    remoteVideoRef.current.onloadedmetadata = () => {
+                        console.log("Remote video metadata loaded, playing...");
+                        remoteVideoRef.current.play().catch(e => console.error("Error playing remote video:", e));
+                    };
+                }
+                return newStream;
+            });
         };
 
         pc.oniceconnectionstatechange = () => {
-            console.log("ICE Connection State:", pc.iceConnectionState);
-            setConnectionStatus(pc.iceConnectionState);
-            if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
-                console.log("Attempting ICE restart or cleanup...");
+            const state = pc.iceConnectionState;
+            console.log("ICE Connection State:", state);
+            setConnectionStatus(state);
+
+            if (state === 'failed') {
+                console.warn("ICE Connection failed. Attempting ICE restart...");
+                pc.restartIce();
+            }
+
+            if (state === 'disconnected') {
+                console.warn("ICE Connection disconnected. Waiting for reconnect...");
             }
         };
 
