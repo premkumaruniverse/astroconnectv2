@@ -22,8 +22,12 @@ const VideoCall = ({ onEndCall, incomingSignal, sendSignal }) => {
                 { urls: 'stun:stun2.l.google.com:19302' },
                 { urls: 'stun:stun3.l.google.com:19302' },
                 { urls: 'stun:stun4.l.google.com:19302' },
+                { urls: 'stun:global.stun.twilio.com:3478' }
             ],
             iceCandidatePoolSize: 10,
+            bundlePolicy: 'max-bundle',
+            rtcpMuxPolicy: 'require',
+            iceTransportPolicy: 'all'
         });
 
         pc.onicecandidate = (event) => {
@@ -364,12 +368,20 @@ const VideoCall = ({ onEndCall, incomingSignal, sendSignal }) => {
                 </div>
             </div>
 
-            {/* Connection Indicator */}
-            <div className="absolute top-4 left-4 z-10 px-3 py-1 bg-black/40 backdrop-blur-sm rounded-full border border-white/10">
-                <div className="flex items-center gap-2">
+            {/* Connection Indicator & Reconnect */}
+            <div className="absolute top-4 left-4 z-10 flex items-center gap-3">
+                <div className="px-3 py-1 bg-black/40 backdrop-blur-sm rounded-full border border-white/10 flex items-center gap-2">
                     <div className={`w-2 h-2 rounded-full ${connectionStatus === 'connected' ? 'bg-green-500' : 'bg-amber-500'}`} />
                     <span className="text-[10px] font-bold text-white uppercase tracking-wider">{connectionStatus}</span>
                 </div>
+                {(connectionStatus === 'failed' || connectionStatus === 'checking') && (
+                    <button
+                        onClick={() => peerConnection.current?.restartIce()}
+                        className="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-bold rounded-full shadow-lg transition-all"
+                    >
+                        RECONNECT
+                    </button>
+                )}
             </div>
         </div>
     );
