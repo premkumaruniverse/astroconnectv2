@@ -70,6 +70,28 @@ const VideoCall = ({ onEndCall, incomingSignal, sendSignal }) => {
             console.log("Connection State:", pc.connectionState);
         };
 
+        pc.onnegotiationneeded = async () => {
+            try {
+                console.log("Negotiation needed - creating offer");
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+                sendSignal({ type: 'offer', sdp: offer });
+            } catch (err) {
+                console.error("Negotiation Error:", err);
+            }
+        };
+
+        pc.oniceconnectionstatechange = () => {
+            const state = pc.iceConnectionState;
+            console.log("ICE Connection State:", state);
+            setConnectionStatus(state);
+
+            if (state === 'failed') {
+                console.warn("ICE Connection failed. Retrying...");
+                pc.restartIce();
+            }
+        };
+
         peerConnection.current = pc;
         return pc;
     };
