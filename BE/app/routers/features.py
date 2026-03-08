@@ -3,10 +3,11 @@ from typing import List, Dict, Any, Optional
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.models import News
+from app.models import News, User, Kundli
 from app.schemas.news import NewsOut
-from app.services.openai_service import openai_service
+from app.services.gemini_service import gemini_service
 from app.services.ai_guru_service import ai_guru_service
+from app.dependencies import get_current_user
 from datetime import datetime
 
 router = APIRouter()
@@ -85,12 +86,66 @@ def test_kundli():
     return {"message": "Kundli endpoint is working"}
 
 @router.post("/kundli/generate")
-async def generate_kundli(birth_data: KundliBirthData):
-    """Generate Brihat Kundli using LLM analysis"""
-    # Import here to avoid circular imports
+async def generate_kundli(
+    birth_data: KundliBirthData, 
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user)
+):
+    """Generate Brihat Kundli using LLM analysis and save to DB if logged in"""
     from app.services.kundli_service import kundli_service
-    kundli_data = await kundli_service.generate_brihat_kundli(birth_data.dict())
-    return kundli_data
+    kundli_response = await kundli_service.generate_brihat_kundli(birth_data.dict())
+    
+    # Save to database if user is logged in
+    if current_user:
+        new_kundli = Kundli(
+            user_id=current_user.id,
+            name=birth_data.name,
+            dob=birth_data.date,
+            tob=birth_data.time,
+            pob=birth_data.place,
+            report_data=kundli_response
+        )
+        db.add(new_kundli)
+        db.commit()
+        db.refresh(new_kundli)
+        kundli_response["db_id"] = new_kundli.id
+        
+    return kundli_response
+
+@router.get("/kundli/history")
+async def get_kundli_history(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get history of generated Kundlis for current user"""
+    return db.query(Kundli).filter(Kundli.user_id == current_user.id).order_by(Kundli.created_at.desc()).all()
+
+@router.get("/kundli/search")
+async def search_kundli(
+    name: str = Query(..., description="Name to search for"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Search saved Kundlis by name for current user"""
+    return db.query(Kundli).filter(
+        Kundli.user_id == current_user.id,
+        Kundli.name.ilike(f"%{name}%")
+    ).all()
+
+@router.get("/kundli/{kundli_id}")
+async def get_saved_kundli(
+    kundli_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get a specific saved Kundli by ID"""
+    kundli = db.query(Kundli).filter(
+        Kundli.id == kundli_id,
+        Kundli.user_id == current_user.id
+    ).first()
+    if not kundli:
+        raise HTTPException(status_code=404, detail="Kundli report not found")
+    return kundli
 
 @router.get("/panchang/daily", response_model=PanchangData)
 async def get_daily_panchang(date: Optional[str] = Query(None, description="Date in YYYY-MM-DD format")):
@@ -98,17 +153,14 @@ async def get_daily_panchang(date: Optional[str] = Query(None, description="Date
     if not date:
         date = datetime.now().strftime("%Y-%m-%d")
     
-    panchang_data = await openai_service.generate_daily_panchang(date)
+    panchang_data = await gemini_service.generate_daily_panchang(date)
     print("@@@@@@@@@@@",panchang_data)
     return panchang_data
 
 @router.get("/horoscope/daily", response_model=List[HoroscopeData])
-def get_daily_horoscope():
-    signs = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"]
-    return [
-        {"sign": sign, "prediction": f"Today is a great day for {sign}. Focus on your goals."}
-        for sign in signs
-    ]
+async def get_daily_horoscope():
+    """Get daily horoscope for all signs using Gemini"""
+    return await gemini_service.generate_daily_horoscope()
 
 @router.post("/ai-guru/chat")
 async def chat_with_guru(request: ChatRequest):
@@ -159,25 +211,15 @@ def get_available_reports():
     ]
 
 @router.get("/insights/{category}")
-def get_insights(category: str):
+async def get_insights(category: str):
+    """Get rich category insights using Gemini"""
     # Covers: career, mental-health, love, education, today
-    descriptions = {
-        "career": "Your career prospects are looking bright. Hard work will pay off.",
-        "mental-health": "Take some time for meditation and mindfulness today.",
-        "love": "Romance is in the air. Express your feelings.",
-        "education": "Good time for learning new skills.",
-        "today": "Today's energy supports new beginnings."
-    }
-    return {"category": category, "insight": descriptions.get(category, "General positive vibes for you.")}
+    return await gemini_service.generate_category_insights(category)
 
 @router.post("/matching/check")
-def check_matching(boy_details: Dict[str, Any], girl_details: Dict[str, Any]):
-    return {
-        "score": 28,
-        "total": 36,
-        "status": "Good Match",
-        "details": "Guna Milan shows high compatibility."
-    }
+async def check_matching(boy_details: Dict[str, Any], girl_details: Dict[str, Any]):
+    """Perform compatibility check using Gemini"""
+    return await gemini_service.generate_kundli_matching(boy_details, girl_details)
 
 @router.get("/services", response_model=List[ServiceItem])
 def get_services():

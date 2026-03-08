@@ -28,36 +28,51 @@ class ConnectionManager:
 
 class RoomConnectionManager:
     def __init__(self):
-        self.active_connections: Dict[str, List[WebSocket]] = {}
+        # session_id -> { user_id -> WebSocket }
+        self.active_connections: Dict[str, Dict[str, WebSocket]] = {}
         self._lock = asyncio.Lock()
 
-    async def connect(self, websocket: WebSocket, session_id: str):
+    async def connect(self, websocket: WebSocket, session_id: str, user_id: str):
         await websocket.accept()
         async with self._lock:
             if session_id not in self.active_connections:
-                self.active_connections[session_id] = []
-            self.active_connections[session_id].append(websocket)
+                self.active_connections[session_id] = {}
+            
+            # If user already connected, close old connection to prevent duplicates
+            if user_id in self.active_connections[session_id]:
+                try:
+                    old_ws = self.active_connections[session_id][user_id]
+                    await old_ws.close(code=1000)
+                except Exception:
+                    pass
+            
+            self.active_connections[session_id][user_id] = websocket
 
-    async def disconnect(self, websocket: WebSocket, session_id: str):
+    async def disconnect(self, websocket: WebSocket, session_id: str, user_id: str):
         async with self._lock:
             if session_id in self.active_connections:
-                if websocket in self.active_connections[session_id]:
-                    self.active_connections[session_id].remove(websocket)
+                if user_id in self.active_connections[session_id] and self.active_connections[session_id][user_id] == websocket:
+                    del self.active_connections[session_id][user_id]
+                
                 if not self.active_connections[session_id]:
                     del self.active_connections[session_id]
 
     async def broadcast(self, message: Dict[str, Any], session_id: str, sender_ws: WebSocket = None):
+        """Broadcasts a message to everyone in the room except the sender."""
         async with self._lock:
             if session_id not in self.active_connections:
                 return
-            targets = list(self.active_connections[session_id])
+            # Get all WS instances in the room
+            targets = list(self.active_connections[session_id].values())
         
         for connection in targets:
             if connection != sender_ws:
                 try:
                     await connection.send_json(message)
                 except Exception:
-                    await self.disconnect(connection, session_id)
+                    # Clean up will happen on disconnect call
+                    pass
+
 
 manager = ConnectionManager()
 room_manager = RoomConnectionManager()

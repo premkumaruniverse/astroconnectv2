@@ -38,12 +38,15 @@ const Signup = () => {
       };
 
       const response = await auth.signup(signupData);
-      const { access_token, role: userRole, name } = response.data;
-      
+      const { access_token, role: userRole, name, profile_image } = response.data;
+
       // Store auth data
       localStorage.setItem('token', access_token);
       localStorage.setItem('role', userRole);
       localStorage.setItem('user_name', name);
+      if (profile_image) {
+        localStorage.setItem('profile_image', profile_image);
+      }
 
       // 2. If Astrologer, submit application details
       if (role === 'astrologer') {
@@ -56,7 +59,7 @@ const Signup = () => {
           languages: formData.languages.split(',').map(s => s.trim()).filter(s => s),
           bio: formData.bio
         };
-        
+
         await astrologer.apply(astroData);
         localStorage.setItem('verification_status', 'pending');
         navigate('/verification-pending');
@@ -77,9 +80,16 @@ const Signup = () => {
     <div className="min-h-screen bg-slate-50 dark:bg-[#0f172a] flex flex-col justify-center py-12 sm:px-6 lg:px-8 transition-colors duration-300">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-amber-400 to-amber-600 flex items-center justify-center">
-                <SparklesIcon className="h-6 w-6 text-white" />
+          <div className="relative">
+            <div className="absolute -inset-2 bg-gradient-to-tr from-amber-400 via-orange-500 to-amber-600 rounded-full blur-xl opacity-40"></div>
+            <div className="relative w-32 h-32 rounded-full border-2 border-amber-500/40 overflow-hidden shadow-2xl bg-black flex items-center justify-center transform hover:rotate-6 transition-transform duration-700">
+              <img
+                src="/logo.png"
+                alt="AstroVeda Logo"
+                className="w-full h-full object-cover scale-[1.7]"
+              />
             </div>
+          </div>
         </div>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-slate-900 dark:text-white">
           Create your account
@@ -94,17 +104,16 @@ const Signup = () => {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-xl">
         <div className="bg-white dark:bg-[#1e293b] py-8 px-4 shadow-xl border border-gray-200 dark:border-gray-700 sm:rounded-lg sm:px-10 transition-colors duration-300">
-          
+
           {/* Role Selection */}
           <div className="flex rounded-md shadow-sm mb-6" role="group">
             <button
               type="button"
               onClick={() => setRole('user')}
-              className={`flex-1 py-2 px-4 text-sm font-medium rounded-l-lg border ${
-                role === 'user'
-                  ? 'bg-amber-600 text-white border-amber-600'
-                  : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-slate-700'
-              } focus:z-10 focus:ring-2 focus:ring-amber-500 transition-colors`}
+              className={`flex-1 py-2 px-4 text-sm font-medium rounded-l-lg border ${role === 'user'
+                ? 'bg-amber-600 text-white border-amber-600'
+                : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-slate-700'
+                } focus:z-10 focus:ring-2 focus:ring-amber-500 transition-colors`}
             >
               <div className="flex items-center justify-center">
                 <UserIcon className="h-5 w-5 mr-2" />
@@ -114,13 +123,12 @@ const Signup = () => {
             <button
               type="button"
               onClick={() => setRole('astrologer')}
-              className={`flex-1 py-2 px-4 text-sm font-medium rounded-r-lg border ${
-                role === 'astrologer'
-                  ? 'bg-amber-600 text-white border-amber-600'
-                  : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-slate-700'
-              } focus:z-10 focus:ring-2 focus:ring-amber-500 transition-colors`}
+              className={`flex-1 py-2 px-4 text-sm font-medium rounded-r-lg border ${role === 'astrologer'
+                ? 'bg-amber-600 text-white border-amber-600'
+                : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-slate-700'
+                } focus:z-10 focus:ring-2 focus:ring-amber-500 transition-colors`}
             >
-               <div className="flex items-center justify-center">
+              <div className="flex items-center justify-center">
                 <StarIcon className="h-5 w-5 mr-2" />
                 Astrologer
               </div>
@@ -151,7 +159,7 @@ const Signup = () => {
                 />
               </div>
             </div>
-            
+
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-gray-300">
                 Email address
@@ -207,75 +215,75 @@ const Signup = () => {
             {role === 'astrologer' && (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label htmlFor="experience" className="block text-sm font-medium text-slate-700 dark:text-gray-300">
-                            Experience (Years)
-                        </label>
-                        <div className="mt-1">
-                            <input
-                            id="experience"
-                            name="experience"
-                            type="number"
-                            required
-                            min="0"
-                            value={formData.experience}
-                            onChange={handleChange}
-                            className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-amber-500 focus:border-amber-500 sm:text-sm bg-slate-50 dark:bg-[#0f172a] text-slate-900 dark:text-white transition-colors"
-                            />
-                        </div>
-                    </div>
-                    <div>
-                        <label htmlFor="languages" className="block text-sm font-medium text-slate-700 dark:text-gray-300">
-                            Languages
-                        </label>
-                        <div className="mt-1">
-                            <input
-                            id="languages"
-                            name="languages"
-                            type="text"
-                            placeholder="e.g. Hindi, English"
-                            required
-                            value={formData.languages}
-                            onChange={handleChange}
-                            className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-amber-500 focus:border-amber-500 sm:text-sm bg-slate-50 dark:bg-[#0f172a] text-slate-900 dark:text-white transition-colors"
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                <div>
-                    <label htmlFor="specialties" className="block text-sm font-medium text-slate-700 dark:text-gray-300">
-                        Specialties
+                  <div>
+                    <label htmlFor="experience" className="block text-sm font-medium text-slate-700 dark:text-gray-300">
+                      Experience (Years)
                     </label>
                     <div className="mt-1">
-                        <input
-                        id="specialties"
-                        name="specialties"
+                      <input
+                        id="experience"
+                        name="experience"
+                        type="number"
+                        required
+                        min="0"
+                        value={formData.experience}
+                        onChange={handleChange}
+                        className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-amber-500 focus:border-amber-500 sm:text-sm bg-slate-50 dark:bg-[#0f172a] text-slate-900 dark:text-white transition-colors"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="languages" className="block text-sm font-medium text-slate-700 dark:text-gray-300">
+                      Languages
+                    </label>
+                    <div className="mt-1">
+                      <input
+                        id="languages"
+                        name="languages"
                         type="text"
-                        placeholder="e.g. Vedic, Tarot, Numerology"
+                        placeholder="e.g. Hindi, English"
                         required
-                        value={formData.specialties}
+                        value={formData.languages}
                         onChange={handleChange}
                         className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-amber-500 focus:border-amber-500 sm:text-sm bg-slate-50 dark:bg-[#0f172a] text-slate-900 dark:text-white transition-colors"
-                        />
+                      />
                     </div>
+                  </div>
                 </div>
 
                 <div>
-                    <label htmlFor="bio" className="block text-sm font-medium text-slate-700 dark:text-gray-300">
-                        Bio
-                    </label>
-                    <div className="mt-1">
-                        <textarea
-                        id="bio"
-                        name="bio"
-                        rows={3}
-                        required
-                        value={formData.bio}
-                        onChange={handleChange}
-                        className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-amber-500 focus:border-amber-500 sm:text-sm bg-slate-50 dark:bg-[#0f172a] text-slate-900 dark:text-white transition-colors"
-                        />
-                    </div>
+                  <label htmlFor="specialties" className="block text-sm font-medium text-slate-700 dark:text-gray-300">
+                    Specialties
+                  </label>
+                  <div className="mt-1">
+                    <input
+                      id="specialties"
+                      name="specialties"
+                      type="text"
+                      placeholder="e.g. Vedic, Tarot, Numerology"
+                      required
+                      value={formData.specialties}
+                      onChange={handleChange}
+                      className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-amber-500 focus:border-amber-500 sm:text-sm bg-slate-50 dark:bg-[#0f172a] text-slate-900 dark:text-white transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="bio" className="block text-sm font-medium text-slate-700 dark:text-gray-300">
+                    Bio
+                  </label>
+                  <div className="mt-1">
+                    <textarea
+                      id="bio"
+                      name="bio"
+                      rows={3}
+                      required
+                      value={formData.bio}
+                      onChange={handleChange}
+                      className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-amber-500 focus:border-amber-500 sm:text-sm bg-slate-50 dark:bg-[#0f172a] text-slate-900 dark:text-white transition-colors"
+                    />
+                  </div>
                 </div>
               </>
             )}

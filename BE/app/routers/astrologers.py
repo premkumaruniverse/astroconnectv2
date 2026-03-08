@@ -3,7 +3,7 @@ from typing import List
 from sqlalchemy.orm import Session
 from datetime import datetime
 from pydantic import BaseModel
-from app.schemas.astrologer import AstrologerApplication, AstrologerProfile
+from app.schemas.astrologer import AstrologerApplication, AstrologerProfile, AstrologerUpdate
 from app.schemas.session import Session as SessionSchema
 from app.dependencies import get_current_user
 from app.core.database import get_db
@@ -54,6 +54,29 @@ async def get_my_profile(current_user: User = Depends(get_current_user), db: Ses
     if not profile:
         raise HTTPException(status_code=404, detail="Astrologer profile not found")
     
+    return profile
+
+@router.put("/me", response_model=AstrologerProfile)
+async def update_profile(profile_data: AstrologerUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    profile = db.query(Astrologer).filter(Astrologer.user_id == current_user.id).first()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Astrologer profile not found")
+    
+    if profile_data.name:
+        profile.name = profile_data.name
+    if profile_data.phone:
+        profile.phone = profile_data.phone
+    if profile_data.experience is not None:
+        profile.experience = profile_data.experience
+    if profile_data.specialties:
+        profile.specialties = profile_data.specialties
+    if profile_data.bio:
+        profile.bio = profile_data.bio
+    if profile_data.languages:
+        profile.languages = profile_data.languages
+        
+    db.commit()
+    db.refresh(profile)
     return profile
 
 @router.put("/me/status", response_model=AstrologerProfile)

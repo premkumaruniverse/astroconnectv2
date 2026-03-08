@@ -1,12 +1,17 @@
 from fastapi import APIRouter
 from app.schemas.chat import ChatMessage
-import openai
+import google.generativeai as genai
 import random
-from app.core.config import OPENAI_API_KEY
+from app.core.config import GEMINI_API_KEY
 
 router = APIRouter()
-if OPENAI_API_KEY:
-    openai.api_key = OPENAI_API_KEY
+
+# Configure Gemini
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+    model = genai.GenerativeModel('gemini-flash-latest')
+else:
+    model = None
 
 def get_fallback_response():
     responses = [
@@ -26,7 +31,7 @@ def get_fallback_response():
 @router.post("/")
 async def chat_with_guru(message: ChatMessage):
     try:
-        if not OPENAI_API_KEY:
+        if not GEMINI_API_KEY or model is None:
              return {"response": "My inner eye (API Key) is not yet opened. Please configure the environment."}
 
         system_prompt = (
@@ -37,18 +42,16 @@ async def chat_with_guru(message: ChatMessage):
             "Be wise, empathetic, and mystical but practical."
         )
         
+        user_content = message.user_message
         if message.birth_details:
-            system_prompt += f" User Birth Details: {message.birth_details}"
+            user_content = f"User Birth Details: {message.birth_details}\n\nUser Question: {user_content}"
         
-        response = await openai.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": message.user_message}
-            ]
-        )
+        # Using Gemini to generate response
+        # We can pass the system prompt as part of the context or instructions
+        chat = model.start_chat(history=[])
+        response = chat.send_message(f"{system_prompt}\n\nUser Question: {user_content}")
         
-        return {"response": response.choices[0].message.content}
+        return {"response": response.text}
     except Exception as e:
-        print(f"Error calling OpenAI: {e}")
+        print(f"Error calling Gemini: {e}")
         return {"response": get_fallback_response()}

@@ -24,8 +24,8 @@ const Login = () => {
     try {
       const response = await auth.login(formData);
 
-      const { access_token, role, name, id, verification_status } = response.data;
-      
+      const { access_token, role, name, id, verification_status, profile_image } = response.data;
+
       // Store auth data
       localStorage.setItem('token', access_token);
       localStorage.setItem('role', role);
@@ -33,6 +33,9 @@ const Login = () => {
       localStorage.setItem('user_id', id);
       if (verification_status) {
         localStorage.setItem('verification_status', verification_status);
+      }
+      if (profile_image) {
+        localStorage.setItem('profile_image', profile_image);
       }
 
       // Redirect based on role
@@ -60,9 +63,16 @@ const Login = () => {
     <div className="min-h-screen bg-slate-50 dark:bg-[#0f172a] flex flex-col justify-center py-12 sm:px-6 lg:px-8 transition-colors duration-300">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-amber-400 to-amber-600 flex items-center justify-center">
-                <SparklesIcon className="h-6 w-6 text-white" />
+          <div className="relative">
+            <div className="absolute -inset-2 bg-gradient-to-tr from-amber-400 via-orange-500 to-amber-600 rounded-full blur-xl opacity-40"></div>
+            <div className="relative w-28 h-28 rounded-full border-2 border-amber-500/40 overflow-hidden shadow-2xl bg-black flex items-center justify-center transform hover:scale-110 transition-transform duration-500">
+              <img
+                src="/logo.png"
+                alt="AstroVeda Logo"
+                className="w-full h-full object-cover scale-[1.7]"
+              />
             </div>
+          </div>
         </div>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-slate-900 dark:text-white">
           Sign in to your account
@@ -83,7 +93,7 @@ const Login = () => {
                 <span className="block sm:inline">{error}</span>
               </div>
             )}
-            
+
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-gray-300">
                 Email address

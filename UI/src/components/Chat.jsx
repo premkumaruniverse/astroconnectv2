@@ -20,7 +20,8 @@ const Chat = ({ user, messages, onSendMessage, onEndChat }) => {
   };
 
   return (
-    <div className="flex flex-col h-[70vh] bg-white dark:bg-gray-800 rounded-lg shadow-lg transition-colors duration-300">
+    <div className="flex flex-col h-full bg-white dark:bg-gray-800 rounded-lg shadow-lg transition-colors duration-300">
+
       <div className="flex justify-between items-center p-4 bg-gray-100 dark:bg-gray-900 rounded-t-lg transition-colors duration-300">
         <h3 className="text-lg font-semibold text-gray-800 dark:text-white transition-colors duration-300">Chat with Astrologer</h3>
         <button onClick={onEndChat} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white transition-colors duration-300">
@@ -34,11 +35,10 @@ const Chat = ({ user, messages, onSendMessage, onEndChat }) => {
             className={`flex ${msg.sender === user ? 'justify-end' : 'justify-start'} mb-4`}
           >
             <div
-              className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg transition-colors duration-300 ${
-                msg.sender === user
+              className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg transition-colors duration-300 ${msg.sender === user
                   ? 'bg-blue-500 text-white'
                   : 'bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
-              }`}
+                }`}
             >
               <p className="text-sm">{msg.text}</p>
               <span className="text-xs text-right block mt-1 opacity-75">{msg.timestamp}</span>

@@ -9,6 +9,7 @@ class WalletTransaction(BaseModel):
     timestamp: datetime = datetime.now()
 
 class WalletBalance(BaseModel):
+    user_id: int
     balance: float
     currency: str = "INR"
     transactions: List[WalletTransaction] = []

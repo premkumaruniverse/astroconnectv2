@@ -2,230 +2,292 @@ import React, { useState, useRef, useEffect } from 'react';
 import { PhoneIcon, PhoneXMarkIcon, MicrophoneIcon, VideoCameraIcon, VideoCameraSlashIcon, UserCircleIcon, PlayIcon } from '@heroicons/react/24/solid';
 
 const VideoCall = ({ onEndCall, incomingSignal, sendSignal }) => {
-  const [isMuted, setIsMuted] = useState(false);
-  const [isVideoOff, setIsVideoOff] = useState(false);
-  const [remoteStream, setRemoteStream] = useState(null);
-  const [connectionStatus, setConnectionStatus] = useState('new'); // new, connecting, connected, disconnected
-  const [incomingCall, setIncomingCall] = useState(null);
-  
-  const localVideoRef = useRef(null);
-  const remoteVideoRef = useRef(null);
-  const peerConnection = useRef(null);
+    const [isMuted, setIsMuted] = useState(false);
+    const [isVideoOff, setIsVideoOff] = useState(false);
+    const [remoteStream, setRemoteStream] = useState(null);
+    const [connectionStatus, setConnectionStatus] = useState('new');
+    const [incomingCall, setIncomingCall] = useState(null);
 
-  useEffect(() => {
-    // Init PeerConnection
-    const pc = new RTCPeerConnection({
-        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-    });
-    
-    pc.onicecandidate = (event) => {
-        if (event.candidate) {
-            sendSignal({ type: 'candidate', candidate: event.candidate });
-        }
-    };
+    const localVideoRef = useRef(null);
+    const remoteVideoRef = useRef(null);
+    const peerConnection = useRef(null);
+    const localStream = useRef(null);
 
-    pc.ontrack = (event) => {
-        console.log("Remote track received", event.streams[0]);
-        setRemoteStream(event.streams[0]);
-        if (remoteVideoRef.current) {
-            remoteVideoRef.current.srcObject = event.streams[0];
-        }
-    };
+    const initPeerConnection = () => {
+        console.log("Initializing RTCPeerConnection");
+        const pc = new RTCPeerConnection({
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' }
+            ]
+        });
 
-    pc.onconnectionstatechange = () => {
-        console.log("Connection state:", pc.connectionState);
-        setConnectionStatus(pc.connectionState);
-    };
-
-    peerConnection.current = pc;
-
-    // Get Media
-    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-        .then(stream => {
-            if (localVideoRef.current) {
-                localVideoRef.current.srcObject = stream;
+        pc.onicecandidate = (event) => {
+            if (event.candidate) {
+                sendSignal({ type: 'candidate', candidate: event.candidate });
             }
-            stream.getTracks().forEach(track => {
-                pc.addTrack(track, stream);
-            });
-        })
-        .catch(err => console.error("Media Error:", err));
+        };
 
-    return () => {
-        if (localVideoRef.current && localVideoRef.current.srcObject) {
-            localVideoRef.current.srcObject.getTracks().forEach(track => track.stop());
-        }
-        pc.close();
+        pc.ontrack = (event) => {
+            console.log("Remote track received:", event.streams[0]);
+            setRemoteStream(event.streams[0]);
+            if (remoteVideoRef.current) {
+                remoteVideoRef.current.srcObject = event.streams[0];
+            }
+        };
+
+        pc.oniceconnectionstatechange = () => {
+            console.log("ICE Connection State:", pc.iceConnectionState);
+            setConnectionStatus(pc.iceConnectionState);
+            if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
+                console.log("Attempting ICE restart or cleanup...");
+            }
+        };
+
+        pc.onconnectionstatechange = () => {
+            console.log("Connection State:", pc.connectionState);
+        };
+
+        peerConnection.current = pc;
+        return pc;
     };
-  }, []);
 
-  useEffect(() => {
-      if (remoteVideoRef.current && remoteStream) {
-          remoteVideoRef.current.srcObject = remoteStream;
-      }
-  }, [remoteStream]);
+    useEffect(() => {
+        const pc = initPeerConnection();
 
-  useEffect(() => {
-    if (incomingSignal) {
-        if (incomingSignal.type === 'offer') {
-             setIncomingCall(incomingSignal);
-        } else {
-             handleSignal(incomingSignal);
+        // Get Media
+        navigator.mediaDevices.getUserMedia({
+            video: {
+                width: { ideal: 640 },
+                height: { ideal: 480 },
+                facingMode: "user"
+            },
+            audio: true
+        })
+            .then(stream => {
+                console.log("Local media stream obtained");
+                localStream.current = stream;
+                if (localVideoRef.current) {
+                    localVideoRef.current.srcObject = stream;
+                }
+                stream.getTracks().forEach(track => {
+                    pc.addTrack(track, stream);
+                });
+            })
+            .catch(err => {
+                console.error("Media Error (Camera/Mic access):", err);
+                alert("Could not access camera or microphone. Please ensure permissions are granted.");
+            });
+
+        return () => {
+            console.log("Cleaning up VideoCall component");
+            if (localStream.current) {
+                localStream.current.getTracks().forEach(track => track.stop());
+            }
+            if (pc) pc.close();
+        };
+    }, []);
+
+    useEffect(() => {
+        if (remoteVideoRef.current && remoteStream) {
+            remoteVideoRef.current.srcObject = remoteStream;
         }
-    }
-  }, [incomingSignal]);
+    }, [remoteStream]);
 
-  const handleSignal = async (data) => {
-      const pc = peerConnection.current;
-      if (!pc) return;
-
-      try {
-        if (data.type === 'answer') {
-            console.log("Received Answer");
-            await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
-        } else if (data.type === 'candidate') {
-            console.log("Received Candidate");
-            await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+    useEffect(() => {
+        if (incomingSignal) {
+            if (incomingSignal.type === 'offer') {
+                console.log("Received Offer Signal");
+                setIncomingCall(incomingSignal);
+            } else {
+                handleSignal(incomingSignal);
+            }
         }
-      } catch (err) {
-          console.error("Error handling signal:", err);
-      }
-  };
+    }, [incomingSignal]);
 
-  const acceptCall = async () => {
-      const pc = peerConnection.current;
-      if (!pc || !incomingCall) return;
+    const handleSignal = async (data) => {
+        const pc = peerConnection.current;
+        if (!pc) return;
 
-      try {
-        await pc.setRemoteDescription(new RTCSessionDescription(incomingCall.sdp));
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-        sendSignal({ type: 'answer', sdp: answer });
+        try {
+            if (data.type === 'answer') {
+                console.log("Handling Answer");
+                if (pc.signalingState !== "stable") {
+                    await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+                }
+            } else if (data.type === 'candidate') {
+                console.log("Handling Candidate");
+                if (data.candidate) {
+                    await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+                }
+            }
+        } catch (err) {
+            console.error("Error handling signal:", err);
+        }
+    };
+
+    const acceptCall = async () => {
+        const pc = peerConnection.current;
+        if (!pc || !incomingCall) return;
+
+        try {
+            await pc.setRemoteDescription(new RTCSessionDescription(incomingCall.sdp));
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            sendSignal({ type: 'answer', sdp: answer });
+            setIncomingCall(null);
+            console.log("Accepted call and sent answer");
+        } catch (err) {
+            console.error("Error accepting call:", err);
+        }
+    };
+
+    const rejectCall = () => {
         setIncomingCall(null);
-      } catch (err) {
-          console.error("Error accepting call:", err);
-      }
-  };
+        onEndCall();
+    };
 
-  const rejectCall = () => {
-      setIncomingCall(null);
-      // Optional: send reject signal
-  };
+    const startCall = async () => {
+        const pc = peerConnection.current;
+        if (!pc) return;
 
-  const startCall = async () => {
-      const pc = peerConnection.current;
-      if (!pc) return;
-      
-      try {
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-        sendSignal({ type: 'offer', sdp: offer });
-        console.log("Sent Offer");
-      } catch (err) {
-          console.error("Error creating offer:", err);
-      }
-  };
+        try {
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            sendSignal({ type: 'offer', sdp: offer });
+            console.log("Sent Offer");
+        } catch (err) {
+            console.error("Error creating offer:", err);
+        }
+    };
 
-  const toggleMute = () => {
-    if (localVideoRef.current && localVideoRef.current.srcObject) {
-      localVideoRef.current.srcObject.getAudioTracks().forEach(track => {
-        track.enabled = !track.enabled;
-      });
-      setIsMuted(!isMuted);
-    }
-  };
+    const toggleMute = () => {
+        if (localStream.current) {
+            localStream.current.getAudioTracks().forEach(track => {
+                track.enabled = !track.enabled;
+            });
+            setIsMuted(!isMuted);
+        }
+    };
 
-  const toggleVideo = () => {
-    if (localVideoRef.current && localVideoRef.current.srcObject) {
-      localVideoRef.current.srcObject.getVideoTracks().forEach(track => {
-        track.enabled = !track.enabled;
-      });
-      setIsVideoOff(!isVideoOff);
-    }
-  };
+    const toggleVideo = () => {
+        if (localStream.current) {
+            localStream.current.getVideoTracks().forEach(track => {
+                track.enabled = !track.enabled;
+            });
+            setIsVideoOff(!isVideoOff);
+        }
+    };
 
-  return (
-    <div className="relative w-full h-full bg-gray-100 dark:bg-gray-900 rounded-lg overflow-hidden shadow-2xl transition-colors duration-300">
-      {/* Top Left End Call Button */}
-      <div className="absolute top-4 left-4 z-30">
-          <button 
-              onClick={onEndCall} 
-              className="flex items-center space-x-2 px-4 py-2 bg-red-600/80 hover:bg-red-700 text-white rounded-lg backdrop-blur-sm shadow-lg transition-all transform hover:scale-105"
-          >
-              <PhoneXMarkIcon className="h-5 w-5" />
-              <span className="font-medium">End Call</span>
-          </button>
-      </div>
-
-      {/* Remote Video */}
-      <div className="absolute top-0 left-0 w-full h-full">
-        {!remoteStream ? (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-gray-200 dark:bg-gray-800 transition-colors duration-300">
-                <UserCircleIcon className="h-48 w-48 text-gray-400 dark:text-gray-600 transition-colors duration-300" />
-                <p className="mt-4 text-gray-500 dark:text-gray-400 animate-pulse">Waiting for connection...</p>
-                {connectionStatus === 'new' && !incomingCall && (
-                    <button 
-                        onClick={startCall}
-                        className="mt-4 px-6 py-2 bg-green-500 hover:bg-green-600 text-white rounded-full font-semibold shadow-lg transition-transform transform hover:scale-105 flex items-center"
-                    >
-                        <PlayIcon className="h-5 w-5 mr-2" />
-                        Start Call
-                    </button>
+    return (
+        <div className="relative w-full h-full bg-slate-900 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10">
+            {/* Remote Video (Large) */}
+            <div className="absolute inset-0 z-0">
+                {!remoteStream ? (
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-slate-800">
+                        <div className="relative">
+                            <div className="w-32 h-32 rounded-full bg-slate-700 flex items-center justify-center mb-4 ring-4 ring-amber-500/30">
+                                <UserCircleIcon className="h-20 w-20 text-slate-500" />
+                            </div>
+                        </div>
+                        <p className="text-slate-400 font-medium animate-pulse">Establishing connection...</p>
+                        {connectionStatus === 'new' && !incomingCall && (
+                            <button
+                                onClick={startCall}
+                                className="mt-6 px-8 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-full font-bold shadow-xl transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2"
+                            >
+                                <VideoCameraIcon className="h-5 w-5" />
+                                Start Video Call
+                            </button>
+                        )}
+                    </div>
+                ) : (
+                    <video
+                        ref={remoteVideoRef}
+                        autoPlay
+                        playsInline
+                        className="w-full h-full object-cover"
+                    />
                 )}
             </div>
-        ) : (
-            <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />
-        )}
-      </div>
 
-      {/* Incoming Call Overlay */}
-      {incomingCall && !remoteStream && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-50 backdrop-blur-sm">
-              <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-2xl text-center transform transition-all scale-105">
-                   <div className="animate-bounce mb-4">
-                       <PhoneIcon className="h-16 w-16 text-green-500 mx-auto" />
-                   </div>
-                   <h3 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Incoming Call...</h3>
-                   <div className="flex space-x-8 justify-center">
-                       <button onClick={acceptCall} className="bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-lg transition-colors">
-                           <PhoneIcon className="h-8 w-8" />
-                       </button>
-                       <button onClick={rejectCall} className="bg-red-500 hover:bg-red-600 text-white p-4 rounded-full shadow-lg transition-colors">
-                           <PhoneXMarkIcon className="h-8 w-8" />
-                       </button>
-                   </div>
-              </div>
-          </div>
-      )}
+            {/* Incoming Call Overlay */}
+            {incomingCall && !remoteStream && (
+                <div className="absolute inset-0 flex items-center justify-center bg-slate-950/80 z-[60] backdrop-blur-md">
+                    <div className="bg-slate-900 p-8 rounded-3xl shadow-2xl text-center border border-white/10 w-80">
+                        <div className="relative mb-6">
+                            <div className="w-24 h-24 rounded-full bg-green-500/20 flex items-center justify-center mx-auto animate-pulse">
+                                <PhoneIcon className="h-12 w-12 text-green-500" />
+                            </div>
+                        </div>
+                        <h3 className="text-xl font-bold mb-8 text-white">Incoming Video Call</h3>
+                        <div className="flex justify-center gap-8">
+                            <button onClick={acceptCall} className="bg-green-500 hover:bg-green-600 text-white p-5 rounded-full shadow-lg shadow-green-500/20 transition-all hover:scale-110 active:scale-90">
+                                <PhoneIcon className="h-8 w-8" />
+                            </button>
+                            <button onClick={rejectCall} className="bg-red-500 hover:bg-red-600 text-white p-5 rounded-full shadow-lg shadow-red-500/20 transition-all hover:scale-110 active:scale-90">
+                                <PhoneXMarkIcon className="h-8 w-8" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
-      {/* Local Video */}
-      <div className="absolute top-4 right-4 w-32 h-24 md:w-48 md:h-36 bg-white dark:bg-gray-800 rounded-lg overflow-hidden border-2 border-white dark:border-gray-600 transition-colors duration-300 shadow-lg z-10">
-         <div className="relative w-full h-full">
-             <video ref={localVideoRef} autoPlay playsInline muted className={`w-full h-full object-cover ${isVideoOff ? 'hidden' : ''}`} />
-             {isVideoOff && (
-                 <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
-                     <UserCircleIcon className="h-12 w-12 text-gray-500" />
-                 </div>
-             )}
-         </div>
-      </div>
+            {/* Local Video Thumbnail - High quality, small corner */}
+            <div className="absolute top-4 right-4 w-28 h-40 md:w-44 md:h-60 rounded-xl overflow-hidden shadow-2xl border-2 border-white/20 z-10 bg-slate-800 ring-4 ring-black/20">
+                <div className="relative w-full h-full">
+                    <video
+                        ref={localVideoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        className={`w-full h-full object-cover -scale-x-100 ${isVideoOff ? 'hidden' : ''}`}
+                    />
+                    {isVideoOff && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <UserCircleIcon className="h-16 w-16 text-slate-600" />
+                        </div>
+                    )}
+                </div>
+            </div>
 
-      {/* Controls */}
-      <div className="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-black/70 to-transparent z-20">
-        <div className="flex justify-center items-center space-x-4">
-          <button onClick={toggleMute} className={`p-3 rounded-full transition-colors ${isMuted ? 'bg-red-500 text-white' : 'bg-gray-700/50 text-white hover:bg-gray-600/70'}`}>
-            {isMuted ? <MicrophoneIcon className="h-6 w-6 text-slate-300" /> : <MicrophoneIcon className="h-6 w-6" />}
-          </button>
-          <button onClick={toggleVideo} className={`p-3 rounded-full transition-colors ${isVideoOff ? 'bg-red-500 text-white' : 'bg-gray-700/50 text-white hover:bg-gray-600/70'}`}>
-            {isVideoOff ? <VideoCameraSlashIcon className="h-6 w-6" /> : <VideoCameraIcon className="h-6 w-6" />}
-          </button>
-          <button onClick={onEndCall} className="p-3 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors shadow-lg">
-            <PhoneXMarkIcon className="h-6 w-6" />
-          </button>
+            {/* Bottom Controls - Sleek floating bar */}
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50">
+                <div className="flex justify-center items-center gap-4 bg-slate-900/60 backdrop-blur-xl px-6 py-4 rounded-full border border-white/10 shadow-2xl">
+                    <button
+                        onClick={toggleMute}
+                        className={`p-4 rounded-full transition-all hover:scale-110 active:scale-95 ${isMuted ? 'bg-red-500 text-white' : 'bg-slate-800 text-white hover:bg-slate-700'}`}
+                    >
+                        {isMuted ? <MicrophoneIcon className="h-6 w-6" /> : <MicrophoneIcon className="h-6 w-6" />}
+                    </button>
+
+                    <button
+                        onClick={onEndCall}
+                        className="p-4 bg-red-600 text-white rounded-full hover:bg-red-700 transition-all hover:scale-110 active:scale-95 shadow-xl shadow-red-600/20"
+                    >
+                        <PhoneXMarkIcon className="h-7 w-7" />
+                    </button>
+
+                    <button
+                        onClick={toggleVideo}
+                        className={`p-4 rounded-full transition-all hover:scale-110 active:scale-95 ${isVideoOff ? 'bg-red-500 text-white' : 'bg-slate-800 text-white hover:bg-slate-700'}`}
+                    >
+                        {isVideoOff ? <VideoCameraSlashIcon className="h-6 w-6" /> : <VideoCameraIcon className="h-6 w-6" />}
+                    </button>
+                </div>
+            </div>
+
+            {/* Connection Indicator */}
+            <div className="absolute top-4 left-4 z-10 px-3 py-1 bg-black/40 backdrop-blur-sm rounded-full border border-white/10">
+                <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${connectionStatus === 'connected' ? 'bg-green-500' : 'bg-amber-500'}`} />
+                    <span className="text-[10px] font-bold text-white uppercase tracking-wider">{connectionStatus}</span>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default VideoCall;
+

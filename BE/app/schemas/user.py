@@ -18,6 +18,7 @@ class Token(BaseModel):
     name: str
     id: int
     verification_status: Optional[str] = None
+    profile_image: Optional[str] = None
 
 class UserInDB(BaseModel):
     name: str
@@ -34,6 +35,11 @@ class UserPublic(BaseModel):
     date_of_birth: Optional[str] = None
     time_of_birth: Optional[str] = None
     place_of_birth: Optional[str] = None
+    phone: Optional[str] = None
+    gender: Optional[str] = None
+    occupation: Optional[str] = None
+    marital_status: Optional[str] = None
+    profile_image: Optional[str] = None
     
     class Config:
         from_attributes = True

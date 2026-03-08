@@ -46,6 +46,7 @@ async def signup(user: UserSignup, db: Session = Depends(get_db)):
         "name": new_user.name,
         "id": new_user.id,
         "verification_status": verification_status,
+        "profile_image": new_user.profile_image
     }
 
 @router.post("/login", response_model=Token)
@@ -65,11 +66,12 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
     )
     
     verification_status = None
+    profile_image = user.profile_image
     if user.role == "astrologer":
         if user.astrologer_profile:
             verification_status = user.astrologer_profile.verification_status
+            profile_image = user.astrologer_profile.profile_image or user.profile_image
         else:
-            # If astrologer doesn't have a profile yet, they should be in pending status
             verification_status = "pending"
 
     return {
@@ -78,5 +80,6 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
         "role": user.role,
         "name": user.name,
         "id": user.id,
-        "verification_status": verification_status
+        "verification_status": verification_status,
+        "profile_image": profile_image
     }

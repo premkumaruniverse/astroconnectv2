@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import { UsersIcon, CurrencyRupeeIcon, ShieldCheckIcon, DocumentTextIcon, XMarkIcon, CheckIcon, XCircleIcon, PhotoIcon } from '@heroicons/react/24/outline';
 import { NewspaperIcon } from '@heroicons/react/24/solid';
-import { admin } from '../services/api';
+import { admin, shop } from '../services/api';
+import { ShoppingBagIcon } from '@heroicons/react/24/outline';
 
 const StatCard = ({ title, value, change, icon: Icon, color }) => (
   <div className="bg-white dark:bg-[#1e293b] p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg transition-colors duration-300">
@@ -25,9 +26,9 @@ const DetailModal = ({ application, onClose, onVerify }) => {
   if (!application) return null;
 
   const safeList = (list) => {
-      if (Array.isArray(list)) return list;
-      if (typeof list === 'string') return list.split(',').map(s => s.trim());
-      return [];
+    if (Array.isArray(list)) return list;
+    if (typeof list === 'string') return list.split(',').map(s => s.trim());
+    return [];
   };
 
   const specialties = safeList(application.specialties);
@@ -38,7 +39,7 @@ const DetailModal = ({ application, onClose, onVerify }) => {
       <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={onClose}></div>
         <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-        <div className="inline-block align-bottom bg-white dark:bg-slate-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-gray-200 dark:border-gray-700">
+        <div className="inline-block align-bottom bg-white dark:bg-slate-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-gray-200 dark:border-gray-700 relative z-50">
           <div className="bg-white dark:bg-slate-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
             <div className="flex justify-between items-start">
               <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white" id="modal-title">
@@ -61,10 +62,10 @@ const DetailModal = ({ application, onClose, onVerify }) => {
                 <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Phone</label>
                 <p className="text-gray-900 dark:text-white">{application.phone || 'N/A'}</p>
               </div>
-               <div>
+              <div>
                 <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Application Date</label>
                 <p className="text-gray-900 dark:text-white">
-                    {application.application_date ? new Date(application.application_date).toLocaleString() : 'N/A'}
+                  {application.application_date ? new Date(application.application_date).toLocaleString() : 'N/A'}
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -74,11 +75,10 @@ const DetailModal = ({ application, onClose, onVerify }) => {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Status</label>
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${
-                    application.verification_status === 'approved' ? 'bg-green-100 text-green-800' :
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${application.verification_status === 'approved' ? 'bg-green-100 text-green-800' :
                     application.verification_status === 'rejected' ? 'bg-red-100 text-red-800' :
-                    'bg-yellow-100 text-yellow-800'
-                  }`}>
+                      'bg-yellow-100 text-yellow-800'
+                    }`}>
                     {application.verification_status}
                   </span>
                 </div>
@@ -140,19 +140,30 @@ const AdminPanel = () => {
   const [selectedApp, setSelectedApp] = useState(null);
   const [stats, setStats] = useState(null);
   const [newsItems, setNewsItems] = useState([]);
+  const [submittingNews, setSubmittingNews] = useState(false);
+  const [shopOrders, setShopOrders] = useState([]);
   const [newsForm, setNewsForm] = useState({
     title: '',
     summary: '',
     content: '',
     image: null,
   });
-  const [submittingNews, setSubmittingNews] = useState(false);
 
   useEffect(() => {
     fetchApplications();
     fetchStats();
     fetchNews();
+    fetchShopOrders();
   }, []);
+
+  const fetchShopOrders = async () => {
+    try {
+      const res = await shop.getAdminOrders();
+      setShopOrders(res.data);
+    } catch (err) {
+      console.error("Failed to fetch shop orders", err);
+    }
+  };
 
   const fetchApplications = async () => {
     try {
@@ -245,13 +256,13 @@ const AdminPanel = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#0f172a] text-gray-900 dark:text-white transition-colors duration-300">
       <Navbar />
-      
+
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
-            <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-400 to-red-600">
-              Admin Control Center
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">Platform Overview & Management</p>
+          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-400 to-red-600">
+            Admin Control Center
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">Platform Overview & Management</p>
         </div>
 
         {/* Stats Grid */}
@@ -281,225 +292,246 @@ const AdminPanel = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Astrologer Verification Queue */}
-            <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300">
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
-                        <ShieldCheckIcon className="h-5 w-5 mr-2 text-amber-500" />
-                        Verification Requests
-                    </h2>
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
-                        {applications.length > 0
-                          ? `${applications.filter(a => a.verification_status === 'pending').length} Pending`
-                          : stats
-                            ? `${stats.verification_requests} Pending`
-                            : '...'}
-                    </span>
-                </div>
-                <div className="space-y-4">
-                    {loading ? (
-                        <p className="text-gray-600 dark:text-gray-400">Loading applications...</p>
-                    ) : applications.length === 0 ? (
-                        <p className="text-gray-600 dark:text-gray-400">No pending applications.</p>
-                    ) : (
-                        applications.map((app) => (
-                            <div key={app.email} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-[#0f172a] rounded-lg border border-gray-200 dark:border-gray-700 transition-colors">
-                                <div className="flex items-center space-x-4">
-                                    <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center font-bold text-gray-600 dark:text-gray-400">
-                                        {app.name.charAt(0)}
-                                    </div>
-                                    <div>
-                                        <div className="flex items-center space-x-2">
-                                            <h3 className="font-medium text-gray-900 dark:text-white">{app.name}</h3>
-                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide ${
-                                                app.verification_status === 'approved'
-                                                  ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
-                                                  : app.verification_status === 'rejected'
-                                                  ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
-                                                  : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300'
-                                            }`}>
-                                                {app.verification_status || 'pending'}
-                                            </span>
-                                        </div>
-                                        <p className="text-sm text-gray-600 dark:text-gray-400">{app.specialties?.join(', ')}</p>
-                                        <p className="text-xs text-gray-500">{app.experience} years • {app.languages?.join(', ')}</p>
-                                        <p className="text-xs text-gray-400 mt-1">
-                                            Applied: {app.application_date ? new Date(app.application_date).toLocaleDateString() : 'N/A'}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex space-x-2">
-                                    <button
-                                        onClick={() => handleVerification(app.email, 'approved')}
-                                        className="p-1.5 bg-green-100 text-green-600 hover:bg-green-200 rounded-lg transition-colors"
-                                        title="Approve"
-                                    >
-                                        <CheckIcon className="h-5 w-5" />
-                                    </button>
-                                    <button
-                                        onClick={() => handleVerification(app.email, 'rejected')}
-                                        className="p-1.5 bg-red-100 text-red-600 hover:bg-red-200 rounded-lg transition-colors"
-                                        title="Reject"
-                                    >
-                                        <XCircleIcon className="h-5 w-5" />
-                                    </button>
-                                    <button 
-                                        onClick={() => setSelectedApp(app)}
-                                        className="px-3 py-1 bg-blue-600/20 hover:bg-blue-600/40 text-blue-500 text-sm rounded transition-colors"
-                                    >
-                                        View
-                                    </button>
-                                </div>
-                            </div>
-                        ))
-                    )}
-                </div>
+          {/* Astrologer Verification Queue */}
+          <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
+                <ShieldCheckIcon className="h-5 w-5 mr-2 text-amber-500" />
+                Verification Requests
+              </h2>
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
+                {applications.length > 0
+                  ? `${applications.filter(a => a.verification_status === 'pending').length} Pending`
+                  : stats
+                    ? `${stats.verification_requests} Pending`
+                    : '...'}
+              </span>
             </div>
-
-            {/* Recent Activity (Placeholder) */}
-            <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300">
-                 <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white flex items-center">
-                    <DocumentTextIcon className="h-5 w-5 mr-2 text-blue-500" />
-                    Recent System Logs
-                </h2>
-                <div className="space-y-4">
-                     <p className="text-gray-500 text-sm">System logs will appear here.</p>
-                </div>
-            </div>
-            <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300 lg:col-span-2">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
-                  <NewspaperIcon className="h-5 w-5 mr-2 text-red-500" />
-                  Articles and Blog
-                </h2>
-              </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <form onSubmit={handleNewsSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Title
-                    </label>
-                    <input
-                      type="text"
-                      name="title"
-                      value={newsForm.title}
-                      onChange={handleNewsInputChange}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                      placeholder="Enter article headline"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Summary
-                    </label>
-                    <textarea
-                      name="summary"
-                      value={newsForm.summary}
-                      onChange={handleNewsInputChange}
-                      rows={2}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
-                      placeholder="Short summary to show on dashboard"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Content
-                    </label>
-                    <textarea
-                      name="content"
-                      value={newsForm.content}
-                      onChange={handleNewsInputChange}
-                      rows={4}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                      placeholder="Full article content"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Image
-                    </label>
-                    <div className="flex items-center gap-3">
-                      <label className="inline-flex items-center px-3 py-2 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700 text-sm text-gray-700 dark:text-gray-200">
-                        <PhotoIcon className="h-4 w-4 mr-2" />
-                        <span>{newsForm.image ? newsForm.image.name : "Upload image"}</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleNewsImageChange}
-                          className="hidden"
-                        />
-                      </label>
+            <div className="space-y-4">
+              {loading ? (
+                <p className="text-gray-600 dark:text-gray-400">Loading applications...</p>
+              ) : applications.length === 0 ? (
+                <p className="text-gray-600 dark:text-gray-400">No pending applications.</p>
+              ) : (
+                applications.map((app) => (
+                  <div key={app.email} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-[#0f172a] rounded-lg border border-gray-200 dark:border-gray-700 transition-colors">
+                    <div className="flex items-center space-x-4">
+                      <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center font-bold text-gray-600 dark:text-gray-400 overflow-hidden">
+                        {app.profile_image ? (
+                          <img src={`http://localhost:8000${app.profile_image}`} alt="Profile" className="w-full h-full object-cover" />
+                        ) : (
+                          app.name.charAt(0)
+                        )}
+                      </div>
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <h3 className="font-medium text-gray-900 dark:text-white">{app.name}</h3>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide ${app.verification_status === 'approved'
+                            ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
+                            : app.verification_status === 'rejected'
+                              ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+                              : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300'
+                            }`}>
+                            {app.verification_status || 'pending'}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{app.specialties?.join(', ')}</p>
+                        <p className="text-xs text-gray-500">{app.experience} years • {app.languages?.join(', ')}</p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          Applied: {app.application_date ? new Date(app.application_date).toLocaleDateString() : 'N/A'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleVerification(app.email, 'approved')}
+                        className="p-1.5 bg-green-100 text-green-600 hover:bg-green-200 rounded-lg transition-colors"
+                        title="Approve"
+                      >
+                        <CheckIcon className="h-5 w-5" />
+                      </button>
+                      <button
+                        onClick={() => handleVerification(app.email, 'rejected')}
+                        className="p-1.5 bg-red-100 text-red-600 hover:bg-red-200 rounded-lg transition-colors"
+                        title="Reject"
+                      >
+                        <XCircleIcon className="h-5 w-5" />
+                      </button>
+                      <button
+                        onClick={() => setSelectedApp(app)}
+                        className="px-3 py-1 bg-blue-600/20 hover:bg-blue-600/40 text-blue-500 text-sm rounded transition-colors"
+                      >
+                        View
+                      </button>
                     </div>
                   </div>
-                  <button
-                    type="submit"
-                    disabled={submittingNews}
-                    className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
-                  >
-                    {submittingNews ? "Publishing..." : "Publish Article"}
-                  </button>
-                </form>
-                <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">
-                  {newsItems.length === 0 ? (
-                    <p className="text-gray-500 text-sm">No articles published yet.</p>
-                  ) : (
-                    newsItems.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-slate-900"
-                      >
-                        <div className="w-20 h-20 rounded-lg bg-gray-200 dark:bg-gray-700 overflow-hidden flex-shrink-0">
-                          {item.image_url ? (
-                            <img
-                              src={item.image_url}
-                              alt={item.title}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : null}
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-1">
-                            {item.title}
-                          </h3>
-                          <p className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2 mb-1">
-                            {item.summary}
-                          </p>
-                          <p className="text-[11px] text-gray-400">
-                            {item.created_at
-                              ? new Date(item.created_at).toLocaleString()
-                              : ""}
-                          </p>
-                        </div>
-                        <div className="flex items-center">
-                          <button
-                            onClick={async () => {
-                              try {
-                                await admin.deleteNews(item.id);
-                                await fetchNews();
-                              } catch (e) {
-                                console.error("Failed to delete news", e);
-                              }
-                            }}
-                            className="px-3 py-1.5 bg-red-600 text-white text-xs rounded hover:bg-red-700"
-                          >
-                            Delete
-                          </button>
-                        </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Shop Monitoring */}
+          <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300">
+            <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white flex items-center">
+              <ShoppingBagIcon className="h-5 w-5 mr-2 text-amber-500" />
+              Recent Shop Orders
+            </h2>
+            <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+              {shopOrders.length === 0 ? (
+                <p className="text-gray-500 text-sm">No orders recorded yet.</p>
+              ) : (
+                shopOrders.map(order => (
+                  <div key={order.id} className="p-3 rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-slate-900 flex justify-between items-center">
+                    <div className="flex items-center gap-3">
+                      <img src={order.product.image_url} className="w-10 h-10 rounded-lg object-cover" />
+                      <div>
+                        <p className="text-xs font-bold text-gray-900 dark:text-white line-clamp-1">{order.product.name}</p>
+                        <p className="text-[10px] text-gray-500">₹{order.total_amount} • {order.status}</p>
                       </div>
-                    ))
-                  )}
+                    </div>
+                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${order.status === 'delivered' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                      }`}>
+                      {order.status}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+          <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300 lg:col-span-2">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
+                <NewspaperIcon className="h-5 w-5 mr-2 text-red-500" />
+                Articles and Blog
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <form onSubmit={handleNewsSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Title
+                  </label>
+                  <input
+                    type="text"
+                    name="title"
+                    value={newsForm.title}
+                    onChange={handleNewsInputChange}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                    placeholder="Enter article headline"
+                  />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Summary
+                  </label>
+                  <textarea
+                    name="summary"
+                    value={newsForm.summary}
+                    onChange={handleNewsInputChange}
+                    rows={2}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                    placeholder="Short summary to show on dashboard"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Content
+                  </label>
+                  <textarea
+                    name="content"
+                    value={newsForm.content}
+                    onChange={handleNewsInputChange}
+                    rows={4}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                    placeholder="Full article content"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Image
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <label className="inline-flex items-center px-3 py-2 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700 text-sm text-gray-700 dark:text-gray-200">
+                      <PhotoIcon className="h-4 w-4 mr-2" />
+                      <span>{newsForm.image ? newsForm.image.name : "Upload image"}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleNewsImageChange}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  disabled={submittingNews}
+                  className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {submittingNews ? "Publishing..." : "Publish Article"}
+                </button>
+              </form>
+              <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">
+                {newsItems.length === 0 ? (
+                  <p className="text-gray-500 text-sm">No articles published yet.</p>
+                ) : (
+                  newsItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-slate-900"
+                    >
+                      <div className="w-20 h-20 rounded-lg bg-gray-200 dark:bg-gray-700 overflow-hidden flex-shrink-0">
+                        {item.image_url ? (
+                          <img
+                            src={item.image_url}
+                            alt={item.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : null}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-1">
+                          {item.title}
+                        </h3>
+                        <p className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2 mb-1">
+                          {item.summary}
+                        </p>
+                        <p className="text-[11px] text-gray-400">
+                          {item.created_at
+                            ? new Date(item.created_at).toLocaleString()
+                            : ""}
+                        </p>
+                      </div>
+                      <div className="flex items-center">
+                        <button
+                          onClick={async () => {
+                            try {
+                              await admin.deleteNews(item.id);
+                              await fetchNews();
+                            } catch (e) {
+                              console.error("Failed to delete news", e);
+                            }
+                          }}
+                          className="px-3 py-1.5 bg-red-600 text-white text-xs rounded hover:bg-red-700"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
+          </div>
         </div>
       </main>
 
       {/* Detail Modal */}
       {selectedApp && (
-        <DetailModal 
-            application={selectedApp} 
-            onClose={() => setSelectedApp(null)} 
-            onVerify={handleVerification}
+        <DetailModal
+          application={selectedApp}
+          onClose={() => setSelectedApp(null)}
+          onVerify={handleVerification}
         />
       )}
     </div>

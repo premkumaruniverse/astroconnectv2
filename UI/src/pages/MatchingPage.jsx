@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { features } from '../services/api';
-import { HeartIcon, UserGroupIcon, SparklesIcon } from '@heroicons/react/24/solid';
+import { HeartIcon, UserGroupIcon, SparklesIcon, ExclamationTriangleIcon } from '@heroicons/react/24/solid';
 
 const MatchingPage = () => {
   const [boyDetails, setBoyDetails] = useState({ name: '', dob: '' });
@@ -47,7 +47,7 @@ const MatchingPage = () => {
                 <input
                   type="text"
                   value={boyDetails.name}
-                  onChange={(e) => setBoyDetails({...boyDetails, name: e.target.value})}
+                  onChange={(e) => setBoyDetails({ ...boyDetails, name: e.target.value })}
                   className="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-amber-500 focus:border-amber-500"
                   placeholder="Enter name"
                 />
@@ -57,7 +57,7 @@ const MatchingPage = () => {
                 <input
                   type="date"
                   value={boyDetails.dob}
-                  onChange={(e) => setBoyDetails({...boyDetails, dob: e.target.value})}
+                  onChange={(e) => setBoyDetails({ ...boyDetails, dob: e.target.value })}
                   className="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-amber-500 focus:border-amber-500"
                 />
               </div>
@@ -76,7 +76,7 @@ const MatchingPage = () => {
                 <input
                   type="text"
                   value={girlDetails.name}
-                  onChange={(e) => setGirlDetails({...girlDetails, name: e.target.value})}
+                  onChange={(e) => setGirlDetails({ ...girlDetails, name: e.target.value })}
                   className="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-amber-500 focus:border-amber-500"
                   placeholder="Enter name"
                 />
@@ -86,7 +86,7 @@ const MatchingPage = () => {
                 <input
                   type="date"
                   value={girlDetails.dob}
-                  onChange={(e) => setGirlDetails({...girlDetails, dob: e.target.value})}
+                  onChange={(e) => setGirlDetails({ ...girlDetails, dob: e.target.value })}
                   className="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-amber-500 focus:border-amber-500"
                 />
               </div>
@@ -105,20 +105,57 @@ const MatchingPage = () => {
         </div>
 
         {result && (
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl overflow-hidden border border-gray-100 dark:border-gray-700 animate-fade-in-up">
-            <div className="bg-gradient-to-r from-red-500 to-pink-600 p-6 text-white text-center">
-              <h2 className="text-3xl font-bold mb-2">{result.score} / {result.total}</h2>
-              <p className="text-lg font-medium opacity-90">{result.status}</p>
+          <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-700 animate-fade-in-up">
+            <div className={`p-8 text-center text-white ${result.score >= 25 ? 'bg-gradient-to-r from-emerald-500 to-teal-600' : result.score >= 18 ? 'bg-gradient-to-r from-amber-500 to-orange-600' : 'bg-gradient-to-r from-rose-500 to-red-600'}`}>
+              <div className="inline-block p-4 bg-white/20 rounded-full backdrop-blur-md mb-4">
+                <HeartIcon className="h-10 w-10 text-white" />
+              </div>
+              <h2 className="text-5xl font-black mb-2">{result.score} <span className="text-2xl opacity-70">/ {result.total}</span></h2>
+              <p className="text-xl font-bold uppercase tracking-widest">{result.status}</p>
             </div>
-            <div className="p-8 text-center">
-              <SparklesIcon className="h-12 w-12 text-amber-500 mx-auto mb-4" />
-              <p className="text-gray-700 dark:text-gray-300 text-lg leading-relaxed">
-                {result.details}
-              </p>
-              <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-100 dark:border-green-800/30">
-                <p className="text-green-800 dark:text-green-300 font-medium">
-                  This match is considered auspicious for marriage.
+
+            <div className="p-8 space-y-8">
+              {/* Conclusion & Detail */}
+              <div className="text-center max-w-2xl mx-auto">
+                <p className="text-gray-700 dark:text-gray-300 text-lg leading-relaxed font-medium">
+                  {result.conclusion || result.details}
                 </p>
+              </div>
+
+              {/* Score Breakdown (Ashtakoot) */}
+              {result.ashtakoot_score && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {Object.entries(result.ashtakoot_score).map(([key, value]) => (
+                    <div key={key} className="p-3 bg-gray-50 dark:bg-slate-700/50 rounded-2xl text-center border border-gray-100 dark:border-slate-600/50">
+                      <span className="block text-[10px] uppercase font-bold text-gray-500 dark:text-gray-400 mb-1">{key}</span>
+                      <span className="text-lg font-black text-gray-900 dark:text-white">{value}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="grid md:grid-cols-2 gap-6 mt-8">
+                {/* Manglik Analysis */}
+                <div className="p-6 bg-amber-50 dark:bg-amber-900/10 rounded-2xl border border-amber-100 dark:border-amber-800/30">
+                  <h4 className="text-amber-800 dark:text-amber-400 font-bold mb-3 flex items-center gap-2">
+                    <ExclamationTriangleIcon className="h-5 w-5" />
+                    Manglik Analysis
+                  </h4>
+                  <p className="text-sm text-gray-700 dark:text-gray-300">
+                    {result.manglik_analysis || "No significant Manglik Dosha detected for either individual."}
+                  </p>
+                </div>
+
+                {/* Relationship Advice */}
+                <div className="p-6 bg-indigo-50 dark:bg-indigo-900/10 rounded-2xl border border-indigo-100 dark:border-indigo-800/30">
+                  <h4 className="text-indigo-800 dark:text-indigo-400 font-bold mb-3 flex items-center gap-2">
+                    <SparklesIcon className="h-5 w-5" />
+                    Spiritual Advice
+                  </h4>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 italic">
+                    {result.relationship_advice || "Focus on communication and mutual respect for a lasting bond."}
+                  </p>
+                </div>
               </div>
             </div>
           </div>

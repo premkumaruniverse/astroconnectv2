@@ -12,5 +12,5 @@ python-jose[cryptography]
 pytest
 httpx
 cloudinary
-openai
+google-generativeai
 websockets

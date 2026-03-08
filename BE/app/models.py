@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, ARRAY, Text, Boolean
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, ARRAY, Text, Boolean, JSON
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.core.database import Base
@@ -11,6 +11,14 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     role = Column(String, default="user")
+    phone = Column(String, nullable=True)
+    gender = Column(String, nullable=True)
+    date_of_birth = Column(String, nullable=True)
+    time_of_birth = Column(String, nullable=True)
+    place_of_birth = Column(String, nullable=True)
+    occupation = Column(String, nullable=True)
+    marital_status = Column(String, nullable=True)
+    profile_image = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
@@ -18,6 +26,7 @@ class User(Base):
     wallet_balance = Column(Float, default=0.0)
     transactions = relationship("Transaction", back_populates="user")
     sessions_as_user = relationship("Session", back_populates="user", foreign_keys="Session.user_id")
+    kundlis = relationship("Kundli", back_populates="user")
 
 class Astrologer(Base):
     __tablename__ = "astrologers"
@@ -48,10 +57,12 @@ class Astrologer(Base):
     total_login_minutes = Column(Integer, default=0)
     is_boosted = Column(Boolean, default=False)
     followers_count = Column(Integer, default=0)
+    profile_image = Column(String, nullable=True)
 
     # Relationships
     user = relationship("User", back_populates="astrologer_profile")
     sessions_as_astrologer = relationship("Session", back_populates="astrologer", foreign_keys="Session.astrologer_id")
+    products = relationship("Product", back_populates="astrologer")
 
 class Session(Base):
     __tablename__ = "sessions"
@@ -93,3 +104,51 @@ class News(Base):
     content = Column(Text, nullable=False)
     image_url = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+class Product(Base):
+    __tablename__ = "products"
+
+    id = Column(Integer, primary_key=True, index=True)
+    astrologer_id = Column(Integer, ForeignKey("astrologers.id"))
+    name = Column(String, index=True)
+    description = Column(Text)
+    price = Column(Float)
+    image_url = Column(String)
+    category = Column(String) 
+    stock = Column(Integer, default=10)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    astrologer = relationship("Astrologer", back_populates="products")
+
+class Order(Base):
+    __tablename__ = "orders"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    product_id = Column(Integer, ForeignKey("products.id"))
+    quantity = Column(Integer, default=1)
+    total_amount = Column(Float)
+    status = Column(String, default="pending") # pending, shipped, delivered, cancelled
+    order_date = Column(DateTime, default=datetime.utcnow)
+    shipping_address = Column(Text)
+
+    # Relationships
+    user = relationship("User")
+    product = relationship("Product")
+
+class Kundli(Base):
+    __tablename__ = "kundlis"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    name = Column(String)
+    dob = Column(String)
+    tob = Column(String)
+    pob = Column(String)
+    report_data = Column(JSON)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationship
+    user = relationship("User", back_populates="kundlis")

@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  StarIcon, 
-  SparklesIcon, 
-  HeartIcon, 
+import {
+  StarIcon,
+  SparklesIcon,
+  HeartIcon,
   ShoppingBagIcon,
   NewspaperIcon,
   AcademicCapIcon,
@@ -15,15 +15,17 @@ import {
   VideoCameraIcon,
   SunIcon,
   MoonIcon,
-  BoltIcon
+  BoltIcon,
+  ChevronRightIcon,
+  UserCircleIcon
 } from '@heroicons/react/24/solid';
 import Navbar from '../components/Navbar';
 import { LanguageContext } from '../context/LanguageContext';
-import { astrologer, features } from '../services/api';
+import { astrologer, features, shop } from '../services/api';
 import AIGuruChat from '../components/AIGuruChat';
 
 const FeatureCard = ({ icon: Icon, title, color, action }) => (
-  <div 
+  <div
     onClick={action}
     className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-md hover:shadow-lg transition-all cursor-pointer border border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center gap-3 group"
   >
@@ -53,7 +55,7 @@ const SectionHeader = ({ title, actionText, onAction }) => (
   <div className="flex justify-between items-center mb-4 px-2">
     <h2 className="text-xl font-bold text-gray-900 dark:text-white">{title}</h2>
     {actionText && (
-      <button 
+      <button
         onClick={onAction}
         className="text-sm text-amber-600 dark:text-amber-400 font-medium hover:underline"
       >
@@ -75,28 +77,20 @@ const Home = () => {
   const { t } = useContext(LanguageContext);
 
   const fetchDashboardData = async () => {
-    try {
-      // Parallel data fetching
-      const [
-        panchangRes, 
-        newsRes, 
-        shopRes, 
-        astroRes
-      ] = await Promise.all([
-        features.getDailyPanchang(),
-        features.getNews(),
-        features.getShopItems(),
-        astrologer.getAll()
-      ]);
-
-      setPanchang(panchangRes.data);
-      setNews(newsRes.data);
-      if (newsRes.data && newsRes.data.length > 0) {
-        setLatestNewsId(newsRes.data[0].id);
+    // 1. Fetch fast data first
+    features.getNews().then(res => {
+      setNews(res.data);
+      if (res.data && res.data.length > 0) {
+        setLatestNewsId(res.data[0].id);
       }
-      setShopItems(shopRes.data);
-      // Sort astrologers: Live first, then Online, then others
-      const sortedAstrologers = astroRes.data.sort((a, b) => {
+    }).catch(err => console.error("News error:", err));
+
+    shop.getProducts().then(res => {
+      setShopItems(res.data);
+    }).catch(err => console.error("Shop error:", err));
+
+    astrologer.getAll().then(res => {
+      const sortedAstrologers = res.data.sort((a, b) => {
         if (a.is_live && !b.is_live) return -1;
         if (!a.is_live && b.is_live) return 1;
         if (a.is_online && !b.is_online) return -1;
@@ -104,9 +98,12 @@ const Home = () => {
         return 0;
       });
       setAstrologersList(sortedAstrologers);
-    } catch (error) {
-      console.error("Error fetching dashboard data:", error);
-    }
+    }).catch(err => console.error("Astro error:", err));
+
+    // 2. Fetch potentially slow data independently
+    features.getDailyPanchang().then(res => {
+      setPanchang(res.data);
+    }).catch(err => console.error("Panchang error:", err));
   };
 
   useEffect(() => {
@@ -210,23 +207,21 @@ const Home = () => {
   }, []);
 
   const menuItems = [
-    { title: 'AI Guru', icon: SparklesIcon, color: 'bg-amber-500', action: () => setIsGuruOpen(true) },
     { title: 'Matching', icon: HeartIcon, color: 'bg-red-500', action: () => navigate('/matching') },
     { title: 'Career', icon: BriefcaseIcon, color: 'bg-green-500', action: () => navigate('/career') },
     { title: 'Mental Health', icon: SparklesIcon, color: 'bg-teal-500', action: () => navigate('/mental-health') },
     { title: 'Today', icon: StarIcon, color: 'bg-indigo-500', action: () => navigate('/today') },
     { title: 'Love', icon: HeartIcon, color: 'bg-rose-500', action: () => navigate('/love') },
     { title: 'Education', icon: AcademicCapIcon, color: 'bg-cyan-500', action: () => navigate('/education') },
-    { title: 'Reports', icon: DocumentTextIcon, color: 'bg-gray-500', action: () => navigate('/reports') },
-    { title: 'Community', icon: UserGroupIcon, color: 'bg-violet-500', action: () => navigate('/services') },
   ];
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-900 transition-colors duration-300">
       {isGuruOpen && <AIGuruChat onClose={() => setIsGuruOpen(false)} />}
       <Navbar />
-      
-      <main className="container mx-auto px-4 py-6 space-y-8 pb-20">
+
+      <main className="container mx-auto px-2 sm:px-4 py-4 md:py-6 space-y-4 md:space-y-8 pb-20">
+
         {hasNewNews && (
           <div className="mb-4 px-3">
             <div className="flex items-center justify-between bg-emerald-500 text-white px-4 py-3 rounded-lg shadow">
@@ -245,76 +240,96 @@ const Home = () => {
         )}
         {/* Quick Row: Panchang, Kundli, Horoscope */}
         <div className="px-1">
-          <div className="grid grid-cols-3 gap-2 items-stretch">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6 items-stretch">
             {/* Panchang Card */}
-            <div 
+            <div
               onClick={() => navigate('/panchang')}
-              className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg p-2 md:p-3 lg:p-4 text-white shadow-sm cursor-pointer hover:shadow-md transition-shadow h-24 md:h-32 lg:h-36 flex flex-col justify-between"
+              className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl sm:rounded-[2rem] p-3 sm:p-6 text-white shadow-xl shadow-amber-500/20 cursor-pointer hover:shadow-2xl transition-all h-14 sm:h-64 flex items-center sm:flex-col sm:justify-between group relative overflow-hidden"
             >
-              <div className="flex items-center gap-2">
-                <CalendarIcon className="h-4 w-4 md:h-5 md:w-5 text-white/90" />
-                <h2 className="text-sm md:text-base font-bold">Daily Panchang</h2>
+              <div className="flex items-center gap-4 w-full sm:mb-6">
+                <div className="p-1.5 sm:p-3 bg-white/20 rounded-2xl group-hover:scale-110 group-hover:rotate-6 transition-transform flex-shrink-0 shadow-inner">
+                  <CalendarIcon className="h-5 w-5 md:h-8 md:w-8 text-white" />
+                </div>
+                <h2 className="text-sm sm:text-2xl font-black uppercase tracking-tighter">Daily Panchang</h2>
               </div>
-              <div className="mt-1">
-                <p className="text-amber-100 text-[11px] md:text-xs md:mb-2">{panchang?.date || "Loading..."}</p>
-                <div className="hidden md:grid grid-cols-3 gap-2 text-[12px] font-medium">
-                  <div className="flex items-center gap-1">
+
+              <div className="hidden sm:flex flex-col flex-1 w-full">
+                <div className="flex items-center justify-between mb-6">
+                  <p className="text-amber-100 text-[10px] md:text-xs font-black opacity-80 tracking-widest">{panchang?.date || "2026-03-08"}</p>
+                  <div className="w-12 h-px bg-white/20"></div>
+                </div>
+                <div className="grid grid-cols-3 gap-2 mt-auto">
+                  <div className="flex flex-col items-center gap-2 p-3 bg-white/10 rounded-2xl border border-white/10 backdrop-blur-sm">
                     <MoonIcon className="h-4 w-4 text-amber-200" />
-                    <span className="truncate">{panchang?.tithi || "..."}</span>
+                    <span className="text-[8px] md:text-[10px] font-black uppercase text-center leading-tight line-clamp-2">{panchang?.tithi || "..."}</span>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex flex-col items-center gap-2 p-3 bg-white/10 rounded-2xl border border-white/10 backdrop-blur-sm">
                     <StarIcon className="h-4 w-4 text-amber-200" />
-                    <span className="truncate">{panchang?.nakshatra || "..."}</span>
+                    <span className="text-[8px] md:text-[10px] font-black uppercase text-center leading-tight line-clamp-2">{panchang?.nakshatra || "..."}</span>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex flex-col items-center gap-2 p-3 bg-white/10 rounded-2xl border border-white/10 backdrop-blur-sm">
                     <SunIcon className="h-4 w-4 text-amber-200" />
-                    <span className="truncate">{panchang?.yog || "..."}</span>
+                    <span className="text-[8px] md:text-[10px] font-black uppercase text-center leading-tight line-clamp-2">{panchang?.yog || "..."}</span>
                   </div>
                 </div>
+              </div>
+
+              <div className="sm:hidden ml-auto">
+                <ChevronRightIcon className="h-5 w-5 text-white/50" />
               </div>
             </div>
 
             {/* Kundli Card */}
-            <div 
-              onClick={() => {
-                console.log('Navigating to Brihat Kundli');
-                navigate('/brihat-kundli');
-              }}
-              className="bg-white dark:bg-slate-800 rounded-lg p-2 md:p-3 lg:p-4 shadow-sm border border-gray-100 dark:border-gray-700 cursor-pointer hover:shadow-md transition-shadow h-24 md:h-32 lg:h-36 flex flex-col justify-between"
+            <div
+              onClick={() => navigate('/brihat-kundli')}
+              className="bg-white dark:bg-slate-800 rounded-xl sm:rounded-[2rem] p-3 sm:p-6 shadow-sm border border-gray-100 dark:border-slate-700 cursor-pointer hover:shadow-2xl transition-all h-14 sm:h-64 flex items-center sm:flex-col group relative overflow-hidden"
             >
-              <div className="flex items-center gap-2">
-                <DocumentTextIcon className="h-4 w-4 md:h-5 md:w-5 text-purple-600 dark:text-purple-400" />
-                <h2 className="text-sm md:text-base font-bold text-gray-900 dark:text-white">Brihat Kundli</h2>
+              <div className="flex items-center gap-4 w-full sm:mb-6">
+                <div className="p-1.5 sm:p-3 bg-purple-500/10 rounded-2xl group-hover:scale-110 group-hover:-rotate-6 transition-transform text-purple-600 dark:text-purple-400 flex-shrink-0 shadow-inner">
+                  <DocumentTextIcon className="h-5 w-5 md:h-8 md:w-8" />
+                </div>
+                <h2 className="text-sm sm:text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Brihat Kundli</h2>
               </div>
-              <div className="flex items-center justify-between">
-                <p className="text-[11px] md:text-xs text-gray-600 dark:text-gray-300">Quick generate</p>
-                <button className="px-2 md:px-3 py-1 md:py-2 bg-purple-600 text-white rounded-md text-[11px] md:text-sm font-semibold hover:bg-purple-700">Open</button>
+              <div className="hidden sm:flex flex-col flex-1 w-full">
+                <p className="text-xs md:text-base text-gray-500 dark:text-gray-400 font-medium leading-relaxed mb-2">Detailed Vedic Astrology charts for your destiny.</p>
+                <p className="text-[10px] md:text-xs font-black text-purple-500 uppercase tracking-widest bg-purple-500/10 px-3 py-1 rounded-full w-fit mb-4">New Release</p>
+                <div className="mt-auto flex items-center justify-between border-t border-gray-100 dark:border-slate-700 pt-4">
+                  <span className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tighter group-hover:text-purple-500 transition-colors">Generate Chart</span>
+                  <div className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-lg group-hover:bg-purple-700 transition-all group-hover:scale-110">
+                    <BoltIcon className="h-5 w-5" />
+                  </div>
+                </div>
+              </div>
+              <div className="sm:hidden ml-auto">
+                <ChevronRightIcon className="h-5 w-5 text-gray-300 dark:text-gray-500" />
               </div>
             </div>
 
             {/* Horoscope Card */}
-            <div 
+            <div
               onClick={() => navigate('/horoscope')}
-              className="bg-white dark:bg-slate-800 rounded-lg p-2 md:p-3 lg:p-4 shadow-sm border border-gray-100 dark:border-gray-700 cursor-pointer hover:shadow-md transition-shadow h-24 md:h-32 lg:h-36 flex flex-col"
+              className="bg-white dark:bg-slate-800 rounded-xl sm:rounded-[2rem] p-3 sm:p-6 shadow-sm border border-gray-100 dark:border-slate-700 cursor-pointer hover:shadow-2xl transition-all h-14 sm:h-64 flex items-center sm:flex-col group relative overflow-hidden"
             >
-              <div className="flex items-center gap-2 mb-1">
-                <SunIcon className="h-4 w-4 md:h-5 md:w-5 text-yellow-500" />
-                <h2 className="text-sm md:text-base font-bold text-gray-900 dark:text-white">Horoscope</h2>
+              <div className="flex items-center gap-4 w-full sm:mb-6">
+                <div className="p-1.5 sm:p-3 bg-yellow-500/10 rounded-2xl group-hover:scale-110 group-hover:rotate-12 transition-transform text-yellow-500 flex-shrink-0 shadow-inner">
+                  <SunIcon className="h-5 w-5 md:h-8 md:w-8" />
+                </div>
+                <h2 className="text-sm sm:text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Horoscope</h2>
               </div>
-              <div className="md:hidden flex items-center gap-1 text-[11px] text-gray-600 dark:text-gray-300">
-                <span>12 Rashi</span><span>•</span><span>Daily</span>
+              <div className="hidden sm:flex flex-col flex-1 w-full">
+                <div className="flex flex-wrap gap-2 mb-6">
+                  <span className="px-3 py-1 bg-gray-100 dark:bg-slate-700 rounded-lg text-[10px] font-black text-gray-600 dark:text-gray-400 tracking-wider uppercase">12 Zodiac Signs</span>
+                  <span className="px-3 py-1 bg-amber-500/10 rounded-lg text-[10px] font-black text-amber-600 tracking-wider uppercase">Daily Guidance</span>
+                </div>
+                <div className="mt-auto flex items-center justify-between border-t border-gray-100 dark:border-slate-700 pt-4">
+                  <span className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tighter group-hover:text-amber-500 transition-colors">Explore Rashi</span>
+                  <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-lg group-hover:translate-x-1 transition-transform">
+                    <ChevronRightIcon className="h-6 w-6" />
+                  </div>
+                </div>
               </div>
-              <div className="hidden md:flex overflow-x-auto gap-2 scrollbar-hide mt-1">
-                {Object.entries(RASHI_ICONS).map(([sign, icon]) => (
-                  <button
-                    key={sign}
-                    onClick={() => navigate('/horoscope')}
-                    className="min-w-[110px] flex items-center gap-2 px-2 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-amber-50 dark:hover:bg-slate-600 transition-colors"
-                  >
-                    <span className="text-3xl md:text-4xl leading-none animate-spin-slow">{icon}</span>
-                    <span className="text-[12px] md:text-sm font-medium text-gray-800 dark:text-gray-200">{sign}</span>
-                  </button>
-                ))}
+              <div className="sm:hidden ml-auto">
+                <ChevronRightIcon className="h-5 w-5 text-gray-300 dark:text-gray-500" />
               </div>
             </div>
           </div>
@@ -323,7 +338,7 @@ const Home = () => {
         {/* Feature Grid */}
         <div>
           <SectionHeader title={t('home_explore_features')} />
-          <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 xs:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4">
             {menuItems.map((item, index) => (
               <FeatureCard key={index} icon={item.icon} title={item.title} color={item.color} action={item.action} />
             ))}
@@ -332,66 +347,75 @@ const Home = () => {
 
         {/* Live Astrologers */}
         <div id="live-astrologers">
-          <SectionHeader title={t('home_live_astrologers')} actionText="View All" onAction={() => {}} />
-          <div className="flex overflow-x-auto pb-4 gap-4 scrollbar-hide">
+          <SectionHeader title={t('home_live_astrologers')} actionText="View All" onAction={() => { }} />
+          <div className="flex overflow-x-auto pb-6 gap-4 scrollbar-hide -mx-4 px-4 snap-x">
             {astrologersList.length > 0 ? astrologersList.map((astro) => (
-              <div key={astro.id} className="min-w-[200px] bg-white dark:bg-slate-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col items-center">
-                 <div className="relative">
-                    <div className="w-16 h-16 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xl font-bold mb-3 overflow-hidden">
-                       {astro.profile_image ? <img src={astro.profile_image} alt={astro.name} className="w-full h-full object-cover"/> : astro.name[0]}
+              <div key={astro.id} className="min-w-[240px] md:min-w-[280px] bg-white dark:bg-slate-800 p-5 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col items-center group snap-center hover:shadow-xl transition-all">
+                <div className="relative mb-4">
+                  <div className="w-20 h-20 md:w-24 md:h-24 rounded-full p-1 bg-gradient-to-tr from-amber-500 to-orange-400">
+                    <div className="w-full h-full rounded-full bg-white dark:bg-slate-700 flex items-center justify-center text-2xl font-black overflow-hidden border-2 border-white dark:border-slate-800">
+                      {astro.profile_image ? <img src={`http://localhost:8000${astro.profile_image}`} alt={astro.name} className="w-full h-full object-cover" /> : astro.name[0]}
                     </div>
-                    {astro.is_live && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full animate-pulse">LIVE</span>}
-                 </div>
-                 <h3 className="font-semibold text-gray-900 dark:text-white truncate w-full text-center">{astro.name}</h3>
-                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{astro.specialties?.[0] || "Vedic"}</p>
-                 <div className="flex items-center justify-between w-full mb-2">
-                   <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">
-                     ₹{astro.rate ?? 0}/min
-                   </span>
-                   <span className="text-[11px] flex items-center gap-1">
-                     <span
-                       className={`inline-block w-2 h-2 rounded-full ${
-                         astro.is_online ? 'bg-green-500' : 'bg-gray-400'
-                       }`}
-                     />
-                     <span className="text-gray-600 dark:text-gray-300">
-                       {astro.is_online ? 'Online' : 'Offline'}
-                     </span>
-                   </span>
-                 </div>
-                 <button 
-                   onClick={() => navigate(`/consultation/${astro.id}`)}
-                   className="w-full py-1.5 bg-amber-500 text-white text-xs font-medium rounded-lg hover:bg-amber-600 transition-colors"
-                 >
-                   Connect
-                 </button>
+                  </div>
+                  {astro.is_live && <span className="absolute top-0 right-0 px-3 py-1 bg-red-500 text-white text-[10px] font-black rounded-full shadow-lg animate-pulse ring-4 ring-white dark:ring-slate-800">LIVE</span>}
+                </div>
+                <h3 className="text-lg font-black text-gray-900 dark:text-white truncate w-full text-center group-hover:text-amber-600 transition-colors uppercase tracking-tight">{astro.name}</h3>
+                <p className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-4 tracking-widest uppercase">{astro.specialties?.[0] || "Vedic Path"}</p>
+                <div className="flex items-center justify-between w-full mb-5 px-2">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase">Rate</span>
+                    <span className="text-sm font-black text-amber-600">₹{astro.rate ?? 0}/min</span>
+                  </div>
+                  <div className="flex flex-col items-end">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase">Status</span>
+                    <span className={`flex items-center gap-1.5 text-xs font-black ${astro.is_online ? 'text-emerald-500' : 'text-gray-400'}`}>
+                      <span className={`w-2 h-2 rounded-full ${astro.is_online ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400'}`} />
+                      {astro.is_online ? 'AVAILABLE' : 'OFFLINE'}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => navigate(`/consultation/${astro.id}`)}
+                  className="w-full py-3 bg-gray-900 dark:bg-amber-500 text-white font-black rounded-2xl hover:bg-black dark:hover:bg-amber-600 transition-all shadow-lg active:scale-95 uppercase text-xs tracking-widest"
+                >
+                  Start Journey
+                </button>
               </div>
             )) : (
-              <div className="text-gray-500 w-full text-center py-4">No astrologers online currently.</div>
+              <div className="text-gray-500 w-full text-center py-10 bg-gray-50 dark:bg-slate-800/50 rounded-3xl border-2 border-dashed border-gray-200 dark:border-slate-700 font-bold uppercase tracking-widest">No spiritual guides online currently.</div>
             )}
           </div>
         </div>
 
         {/* Astro Shop Preview */}
         <div id="astro-shop">
-          <SectionHeader title={t('home_astro_shop')} actionText="Visit Store" onAction={() => {}} />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {shopItems.map((item) => (
-              <div key={item.id} className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-700 group">
-                <div className="h-32 bg-gray-200 dark:bg-gray-700 w-full relative">
-                   {/* Placeholder for image */}
-                   <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-                      <ShoppingBagIcon className="h-8 w-8" />
-                   </div>
+          <SectionHeader title={t('home_astro_shop')} actionText="View All" onAction={() => navigate('/shop')} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+            {shopItems.slice(0, 4).map((item) => (
+              <div key={item.id} onClick={() => navigate('/shop')} className="bg-white dark:bg-slate-800 rounded-3xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-800 group cursor-pointer hover:shadow-2xl transition-all flex flex-col h-full">
+                <div className="h-48 md:h-56 bg-gray-50 dark:bg-slate-900 w-full relative overflow-hidden flex items-center justify-center p-4">
+                  {item.image_url ? (
+                    <img src={item.image_url} alt={item.name} className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-700" />
+                  ) : (
+                    <div className="p-8 bg-amber-500/10 rounded-full text-amber-500 group-hover:scale-110 transition-transform duration-700">
+                      <ShoppingBagIcon className="h-16 w-16" />
+                    </div>
+                  )}
+                  <div className="absolute top-4 left-4 px-3 py-1 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md rounded-full text-[10px] font-black text-amber-600 uppercase tracking-widest shadow-sm">
+                    {item.category}
+                  </div>
                 </div>
-                <div className="p-3">
-                   <h4 className="font-medium text-gray-900 dark:text-white text-sm truncate">{item.name}</h4>
-                   <div className="flex justify-between items-center mt-2">
-                      <span className="text-amber-600 dark:text-amber-400 font-bold text-sm">₹{item.price}</span>
-                      <button className="p-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-amber-500 hover:text-white transition-colors">
-                        <ShoppingBagIcon className="h-4 w-4" />
-                      </button>
-                   </div>
+                <div className="p-6 flex-1 flex flex-col">
+                  <h4 className="font-black text-gray-900 dark:text-white text-base truncate mb-2 uppercase tracking-tight">{item.name}</h4>
+                  <div className="flex justify-between items-end mt-auto">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase">Price</span>
+                      <span className="text-xl font-black text-amber-600">₹{item.price}</span>
+                    </div>
+                    <div className="w-12 h-12 bg-gray-900 dark:bg-amber-500 rounded-2xl text-white flex items-center justify-center shadow-lg group-hover:bg-amber-600 transition-colors transform group-hover:-translate-y-1">
+                      <ShoppingBagIcon className="h-6 w-6" />
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
@@ -399,33 +423,45 @@ const Home = () => {
         </div>
 
         {/* News Section */}
-        <div id="articles-blog">
-          <SectionHeader title={t('home_latest_news')} actionText="Read More" onAction={() => {}} />
-          <div className="space-y-4">
-             {news.map((item) => (
-               <div 
-                 key={item.id} 
-                 onClick={() => navigate(`/article/${item.id}`)}
-                 className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex gap-4 cursor-pointer hover:shadow-md transition-shadow"
-               >
-                  <div className="w-24 h-24 bg-gray-200 dark:bg-gray-700 rounded-lg flex-shrink-0 overflow-hidden">
-                    {item.image_url ? (
-                      <img
-                        src={item.image_url}
-                        alt={item.title}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : null}
+        <div id="articles-blog" className="pb-10">
+          <SectionHeader title={t('home_latest_news')} actionText="View All" onAction={() => { }} />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {news.slice(0, 4).map((item) => (
+              <div
+                key={item.id}
+                onClick={() => navigate(`/article/${item.id}`)}
+                className="bg-white dark:bg-slate-800 p-4 md:p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row gap-6 cursor-pointer hover:shadow-xl transition-all group"
+              >
+                <div className="w-full sm:w-32 h-40 sm:h-32 bg-gray-50 dark:bg-slate-700 rounded-2xl flex-shrink-0 overflow-hidden relative">
+                  {item.image_url ? (
+                    <img
+                      src={item.image_url}
+                      alt={item.title}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-amber-500/20">
+                      <NewspaperIcon className="w-12 h-12" />
+                    </div>
+                  )}
+                  <div className="absolute top-2 left-2 w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]"></div>
+                </div>
+                <div className="flex-1 flex flex-col">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Spiritual Insights</span>
+                    <span className="text-[10px] text-gray-300">•</span>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                      {item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Sacred Date'}
+                    </span>
                   </div>
-                  <div className="flex-1">
-                     <h3 className="font-semibold text-gray-900 dark:text-white mb-1 line-clamp-1">{item.title}</h3>
-                     <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-2">{item.summary}</p>
-                     <span className="text-xs text-gray-400">
-                       {item.created_at ? new Date(item.created_at).toLocaleDateString() : ''}
-                     </span>
+                  <h3 className="font-black text-gray-900 dark:text-white text-lg mb-2 line-clamp-1 uppercase tracking-tight group-hover:text-amber-600 transition-colors">{item.title}</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed mb-4">{item.summary}</p>
+                  <div className="mt-auto flex items-center gap-1 text-xs font-black text-gray-900 dark:text-amber-500 uppercase tracking-widest group-hover:gap-2 transition-all">
+                    Read Wisdom <span>→</span>
                   </div>
-               </div>
-             ))}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 

@@ -1,8 +1,7 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://3.27.248.57:8000';
-
-
+export const API_URL = import.meta.env.VITE_API_URL || 'http://3.27.248.57:8000';
+// export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -32,6 +31,7 @@ export const auth = {
 
 export const astrologer = {
   getProfile: () => api.get('/api/astrologers/me'),
+  updateProfile: (data) => api.put('/api/astrologers/me', data),
   apply: (data) => api.post('/api/astrologers/apply', data),
   getAll: () => api.get('/api/astrologers/'),
   getById: (id) => api.get(`/api/astrologers/${id}`),
@@ -45,6 +45,9 @@ export const astrologer = {
 export const users = {
   getProfile: () => api.get('/api/users/me'),
   updateProfile: (data) => api.put('/api/users/me', data),
+  updatePhoto: (formData) => api.post('/api/users/me/photo', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
 };
 
 export const admin = {
@@ -81,6 +84,10 @@ export const features = {
   checkMatching: (boyData, girlData) => api.post('/api/features/matching/check', { boy_details: boyData, girl_details: girlData }),
   getTodayInsights: () => api.get('/api/features/today/insights'),
   getServices: () => api.get('/api/features/services'),
+  generateKundli: (data) => api.post('/api/features/kundli/generate', data),
+  getKundliHistory: () => api.get('/api/features/kundli/history'),
+  searchKundli: (name) => api.get(`/api/features/kundli/search?name=${name}`),
+  getSavedKundli: (id) => api.get(`/api/features/kundli/${id}`),
 };
 
 export const aiGuru = {
@@ -92,6 +99,20 @@ export const sessions = {
   getById: (sessionId) => api.get(`/api/sessions/${sessionId}`),
   end: (sessionId) => api.post(`/api/sessions/${sessionId}/end`),
   getActive: () => api.get('/api/sessions/active'),
+};
+
+export const shop = {
+  getProducts: (category) => api.get('/api/shop/products', { params: { category } }),
+  getProduct: (id) => api.get(`/api/shop/products/${id}`),
+  createProduct: (formData) => api.post('/api/shop/products', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+  updateProduct: (id, data) => api.put(`/api/shop/products/${id}`, data),
+  createOrder: (data) => api.post('/api/shop/orders', data),
+  getMyOrders: () => api.get('/api/shop/my-orders'),
+  getAstrologerOrders: () => api.get('/api/shop/astrologer-orders'),
+  getAdminOrders: () => api.get('/api/shop/admin/orders'),
+  updateOrderStatus: (id, status) => api.put(`/api/shop/orders/${id}/status?status=${status}`),
 };
 
 export default api;

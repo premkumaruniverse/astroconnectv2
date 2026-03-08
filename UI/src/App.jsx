@@ -19,6 +19,9 @@ import MatchingPage from './pages/MatchingPage';
 import ReportsPage from './pages/ReportsPage';
 import InsightPage from './pages/InsightPage';
 import ArticleDetailPage from './pages/ArticleDetailPage';
+import Shop from './pages/Shop';
+import AIGuruPage from './pages/AIGuruPage';
+import ProfilePage from './pages/ProfilePage';
 
 import VerificationPendingRoute from './components/VerificationPendingRoute';
 
@@ -36,15 +39,15 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     // Redirect to appropriate dashboard based on their actual role
     if (userRole === 'admin') return <Navigate to="/admin" replace />;
     if (userRole === 'astrologer') {
-        if (verificationStatus === 'pending') return <Navigate to="/verification-pending" replace />;
-        return <Navigate to="/astro-dashboard" replace />;
+      if (verificationStatus === 'pending') return <Navigate to="/verification-pending" replace />;
+      return <Navigate to="/astro-dashboard" replace />;
     }
     return <Navigate to="/dashboard" replace />;
   }
-  
+
   // Specific check for astrologers accessing their dashboard
   if (userRole === 'astrologer' && verificationStatus === 'pending') {
-      return <Navigate to="/verification-pending" replace />;
+    return <Navigate to="/verification-pending" replace />;
   }
 
   return children;
@@ -55,14 +58,14 @@ const RootRedirect = () => {
   const token = localStorage.getItem('token');
   const role = localStorage.getItem('role');
   const verificationStatus = localStorage.getItem('verification_status');
-  
+
   if (token) {
-     if (role === 'admin') return <Navigate to="/admin" replace />;
-     if (role === 'astrologer') {
-        if (verificationStatus === 'pending') return <Navigate to="/verification-pending" replace />;
-        return <Navigate to="/astro-dashboard" replace />;
-     }
-     return <Navigate to="/dashboard" replace />;
+    if (role === 'admin') return <Navigate to="/admin" replace />;
+    if (role === 'astrologer') {
+      if (verificationStatus === 'pending') return <Navigate to="/verification-pending" replace />;
+      return <Navigate to="/astro-dashboard" replace />;
+    }
+    return <Navigate to="/dashboard" replace />;
   }
   return <Navigate to="/login" replace />;
 };
@@ -72,96 +75,106 @@ function App() {
     <ThemeProvider>
       <LanguageProvider>
         <Router>
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        
-        <Route path="/panchang" element={<PanchangPage />} />
-        <Route path="/horoscope" element={<HoroscopePage />} />
-        <Route path="/today" element={<TodayPage />} />
-        <Route path="/brihat-kundli" element={<BrihatKundliPage />} />
-        <Route path="/services" element={<ServicesPage />} />
-        <Route path="/matching" element={<MatchingPage />} />
-        <Route path="/reports" element={<ReportsPage />} />
-        <Route path="/career" element={<InsightPage category="career" />} />
-        <Route path="/mental-health" element={<InsightPage category="mental-health" />} />
-        <Route path="/love" element={<InsightPage category="love" />} />
-        <Route path="/education" element={<InsightPage category="education" />} />
-        <Route path="/article/:id" element={<ArticleDetailPage />} />
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
 
-        <Route 
-          path="/verification-pending" 
-          element={<VerificationPendingRoute />} 
-        />
+            <Route path="/panchang" element={<PanchangPage />} />
+            <Route path="/horoscope" element={<HoroscopePage />} />
+            <Route path="/today" element={<TodayPage />} />
+            <Route path="/brihat-kundli" element={<BrihatKundliPage />} />
+            <Route path="/services" element={<ServicesPage />} />
+            <Route path="/matching" element={<MatchingPage />} />
+            <Route path="/reports" element={<ReportsPage />} />
+            <Route path="/career" element={<InsightPage category="career" />} />
+            <Route path="/mental-health" element={<InsightPage category="mental-health" />} />
+            <Route path="/love" element={<InsightPage category="love" />} />
+            <Route path="/education" element={<InsightPage category="education" />} />
+            <Route path="/article/:id" element={<ArticleDetailPage />} />
+            <Route path="/shop" element={<Shop />} />
+            <Route path="/ai-guru" element={<AIGuruPage />} />
 
-        {/* User (Client) Routes */}
-        <Route 
-          path="/dashboard" 
-          element={
-            <ProtectedRoute allowedRoles={['user']}>
-              <Home />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/consultation/:id" 
-          element={
-            <ProtectedRoute allowedRoles={['user']}>
-              <ConsultationRoom />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/consultation-room/:sessionId" 
-          element={
-            <ProtectedRoute allowedRoles={['user', 'astrologer']}>
-              <ConsultationRoom />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/wallet" 
-          element={
-            <ProtectedRoute allowedRoles={['user']}>
-              <Wallet />
-            </ProtectedRoute>
-          } 
-        />
+            <Route
+              path="/verification-pending"
+              element={<VerificationPendingRoute />}
+            />
 
-        {/* Astrologer Routes */}
-        <Route 
-          path="/astro-dashboard" 
-          element={
-            <ProtectedRoute allowedRoles={['astrologer']}>
-              <AstrologerDashboard />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/apply-astrologer" 
-          element={
-            <ProtectedRoute allowedRoles={['user', 'astrologer']}>
-              <ApplyAstrologer />
-            </ProtectedRoute>
-          } 
-        />
+            {/* User (Client) Routes */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['user']}>
+                  <Home />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/consultation/:id"
+              element={
+                <ProtectedRoute allowedRoles={['user']}>
+                  <ConsultationRoom />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/consultation-room/:sessionId"
+              element={
+                <ProtectedRoute allowedRoles={['user', 'astrologer']}>
+                  <ConsultationRoom />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/wallet"
+              element={
+                <ProtectedRoute allowedRoles={['user']}>
+                  <Wallet />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute allowedRoles={['user', 'astrologer']}>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
 
-        {/* Admin Routes */}
-        <Route 
-          path="/admin" 
-          element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <AdminPanel />
-            </ProtectedRoute>
-          } 
-        />
-        
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    </Router>
+            {/* Astrologer Routes */}
+            <Route
+              path="/astro-dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['astrologer']}>
+                  <AstrologerDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/apply-astrologer"
+              element={
+                <ProtectedRoute allowedRoles={['user', 'astrologer']}>
+                  <ApplyAstrologer />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Admin Routes */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminPanel />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Fallback */}
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </Router>
       </LanguageProvider>
     </ThemeProvider>
   );

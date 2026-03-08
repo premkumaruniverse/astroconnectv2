@@ -11,6 +11,14 @@ class AstrologerApplication(BaseModel):
     languages: List[str]
     phone: str
 
+class AstrologerUpdate(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    experience: Optional[int] = None
+    specialties: Optional[List[str]] = None
+    bio: Optional[str] = None
+    languages: Optional[List[str]] = None
+
 class AstrologerProfile(AstrologerApplication):
     status: str = "pending" # pending, approved, rejected
     rating: float = 0.0
@@ -25,6 +33,7 @@ class AstrologerProfile(AstrologerApplication):
     total_login_minutes: int = 0
     is_boosted: bool = False
     followers_count: int = 0
+    profile_image: Optional[str] = None
     
     id: Optional[Union[str, int]] = None
     verification_status: Optional[str] = None # To match dashboard property
