@@ -12,6 +12,12 @@ const VideoCall = ({ onEndCall, incomingSignal, sendSignal }) => {
     const remoteVideoRef = useRef(null);
     const peerConnection = useRef(null);
     const localStream = useRef(null);
+    const [debugLogs, setDebugLogs] = useState([]);
+
+    const addLog = (msg) => {
+        console.log(`[RTC] ${msg}`);
+        setDebugLogs(prev => [msg, ...prev].slice(0, 5));
+    };
 
     const initPeerConnection = () => {
         console.log("Initializing RTCPeerConnection");
@@ -87,13 +93,9 @@ const VideoCall = ({ onEndCall, incomingSignal, sendSignal }) => {
 
         pc.oniceconnectionstatechange = () => {
             const state = pc.iceConnectionState;
-            console.log("ICE Connection State:", state);
+            addLog(`Net Status: ${state}`);
             setConnectionStatus(state);
-
-            if (state === 'failed') {
-                console.warn("ICE Connection failed. Retrying...");
-                pc.restartIce();
-            }
+            if (state === 'failed') pc.restartIce();
         };
 
         peerConnection.current = pc;
@@ -111,6 +113,7 @@ const VideoCall = ({ onEndCall, incomingSignal, sendSignal }) => {
             return;
         }
 
+        addLog("Getting Camera...");
         navigator.mediaDevices.getUserMedia({
             video: {
                 width: { ideal: 640 },
@@ -120,13 +123,12 @@ const VideoCall = ({ onEndCall, incomingSignal, sendSignal }) => {
             audio: true
         })
             .then(stream => {
-                console.log("Local media stream obtained");
+                addLog("Camera: ACTIVE");
                 localStream.current = stream;
                 if (localVideoRef.current) {
                     localVideoRef.current.srcObject = stream;
                     localVideoRef.current.onloadedmetadata = () => {
-                        console.log("Local video metadata loaded, playing...");
-                        localVideoRef.current.play().catch(e => console.error("Error playing local video:", e));
+                        localVideoRef.current.play().catch(e => addLog("Play Err: " + e.message));
                     };
                 }
                 stream.getTracks().forEach(track => {
@@ -134,14 +136,7 @@ const VideoCall = ({ onEndCall, incomingSignal, sendSignal }) => {
                 });
             })
             .catch(err => {
-                console.error("Media Error (Camera/Mic access):", err);
-                if (err.name === 'NotAllowedError') {
-                    alert("Camera Permission Denied: Please allow camera access in your browser settings.");
-                } else if (err.name === 'NotFoundError') {
-                    alert("No Camera Found: Please ensure your camera is connected.");
-                } else {
-                    alert("Camera Access Error: " + err.message);
-                }
+                addLog(`Cam Err: ${err.name}`);
                 setConnectionStatus('failed');
             });
 
@@ -366,6 +361,15 @@ const VideoCall = ({ onEndCall, incomingSignal, sendSignal }) => {
                         {isVideoOff ? <VideoCameraSlashIcon className="h-6 w-6" /> : <VideoCameraIcon className="h-6 w-6" />}
                     </button>
                 </div>
+            </div>
+
+            {/* Debug Console */}
+            <div className="absolute top-16 left-4 z-50 pointer-events-none">
+                {debugLogs.map((log, i) => (
+                    <div key={i} className="text-[10px] bg-black/60 text-white px-2 py-0.5 rounded mb-1 border border-white/5 backdrop-blur-sm">
+                        {log}
+                    </div>
+                ))}
             </div>
 
             {/* Connection Indicator & Reconnect */}
